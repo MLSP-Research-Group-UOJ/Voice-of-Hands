@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLI Detection System - Process Flowchart</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: white;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        @media print {
+            @page {
+                size: A3 portrait;
+                margin: 1cm;
+            }
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Sign Language Interpreter Detection System - Process Flowchart</h1>
+    
+    <div class="mermaid">
+graph TB
+    Start([Input: Broadcast Video<br/>News/Parliament with SLI]) --> Init[Initialize System<br/>OpenCV VideoCapture<br/>Extract: Resolution, FPS, Duration]
+    
+    Init --> Detection{Auto Detection Mode}
+    
+    Detection --> Border[Border Detection Method<br/>HSV Color Space Analysis<br/>Morphological Operations]
+    Border --> BorderCheck{Confidence > 0.25?}
+    BorderCheck -->|Yes| BorderResult[✓ Border Detected<br/>Light-colored frame found]
+    BorderCheck -->|No| Hybrid[Hybrid Detection<br/>Motion + Edge Fallback]
+    
+    Hybrid --> Motion[Motion Analysis<br/>Optical Flow - Farneback<br/>Accumulate motion heatmap]
+    Motion --> MotionCheck{Confidence > 0.6?}
+    MotionCheck -->|Yes| MotionResult[✓ Motion Detected<br/>High-frequency movement]
+    MotionCheck -->|No| Edge[Edge Detection<br/>Canny Edge Detector<br/>Contour Analysis]
+    
+    Edge --> EdgeResult[✓ Edge Detected<br/>Rectangular overlay found]
+    
+    BorderResult --> Result[Detection Result<br/>Bounding Box: x1,y1,x2,y2<br/>Confidence Score<br/>Method Used]
+    MotionResult --> Result
+    EdgeResult --> Result
+    
+    Result --> Param[Apply Parameters<br/>Border Margin: 5-15%<br/>Crop Adjust: +/- pixels<br/>Start Time: Skip intro]
+    
+    Param --> Crop[Video Cropping<br/>ffmpeg with Audio<br/>Precise Region Extraction]
+    
+    Crop --> CropType{Crop Type}
+    CropType --> FullVideo[Full Cropped Video<br/>Entire video with SLI only<br/>Audio Preserved]
+    CropType --> Clips[Clip Segmentation<br/>5-second chunks<br/>Optional overlap]
+    
+    Clips --> Resize{Output Size?}
+    Resize -->|Original| NoResize[Keep Original Resolution]
+    Resize -->|128x128| Resize128[Resize to 128x128<br/>cv2.INTER_AREA]
+    Resize -->|256x256| Resize256[Resize to 256x256<br/>cv2.INTER_AREA]
+    
+    NoResize --> Quality[Quality Filtering<br/>Duration Check<br/>Motion Validation<br/>Resolution Check]
+    Resize128 --> Quality
+    Resize256 --> Quality
+    
+    Quality --> QualityCheck{Passes Checks?}
+    QualityCheck -->|Yes| Keep[✓ Keep Clip]
+    QualityCheck -->|No| Discard[✗ Discard Clip]
+    
+    Keep --> Stats[Generate Statistics<br/>Total clips, duration<br/>Resolution, file size<br/>Quality metrics]
+    Discard --> Stats
+    
+    Stats --> Preview[Create Previews<br/>Detection visualization<br/>Sample frames grid<br/>Bounding boxes overlay]
+    
+    Preview --> Output[Output Structure<br/>clips/ - Training data<br/>full_cropped/ - Full video<br/>previews/ - Visualizations<br/>statistics.json - Metrics]
+    
+    Output --> End([Dataset Ready for Training<br/>Sign Language Transcription])
+    
+    FullVideo --> Output
+    
+    style Start fill:#e1f5ff
+    style Detection fill:#fff4e1
+    style Border fill:#ffe1e1
+    style Motion fill:#ffe1e1
+    style Edge fill:#ffe1e1
+    style Result fill:#e1ffe1
+    style Crop fill:#f0e1ff
+    style Quality fill:#ffe1f0
+    style Output fill:#e1ffe1
+    style End fill:#e1f5ff
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
