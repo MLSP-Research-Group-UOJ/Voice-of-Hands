@@ -1,0 +1,53 @@
+{
+  "source_video": "output_signer_dataset/full_cropped/output_short_sli_cropped.mp4",
+  "total_duration": 347.03333333333336,
+  "active_time": 19.466666666666697,
+  "idle_time": 327.56666666666666,
+  "hands_detected_pct": 82.71059456344251,
+  "motion_threshold": 0.02,
+  "min_active_duration": 2.0,
+  "clips": [
+    {
+      "path": "active_clips_fixed/active_001_149.6s-151.7s.mp4",
+      "start": 149.6,
+      "end": 151.73,
+      "duration": 2.13
+    },
+    {
+      "path": "active_clips_fixed/active_002_267.3s-270.0s.mp4",
+      "start": 267.27,
+      "end": 270.03,
+      "duration": 2.77
+    },
+    {
+      "path": "active_clips_fixed/active_003_282.5s-284.7s.mp4",
+      "start": 282.47,
+      "end": 284.73,
+      "duration": 2.27
+    },
+    {
+      "path": "active_clips_fixed/active_004_315.9s-317.9s.mp4",
+      "start": 315.87,
+      "end": 317.9,
+      "duration": 2.03
+    },
+    {
+      "path": "active_clips_fixed/active_005_321.6s-325.5s.mp4",
+      "start": 321.63,
+      "end": 325.5,
+      "duration": 3.87
+    },
+    {
+      "path": "active_clips_fixed/active_006_328.7s-330.7s.mp4",
+      "start": 328.67,
+      "end": 330.7,
+      "duration": 2.03
+    },
+    {
+      "path": "active_clips_fixed/active_007_331.6s-336.0s.mp4",
+      "start": 331.63,
+      "end": 336.0,
+      "duration": 4.37
+    }
+  ]
+}

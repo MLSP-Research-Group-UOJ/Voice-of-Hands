@@ -1,0 +1,103 @@
+SIMPLIFIED REST DETECTION - NOW EASIER TO DETECT!
+=================================================
+
+OLD DETECTION (Too Strict - Always Failed):
+- Required 5 conditions
+- Had confusing "wrist above elbow" check that failed often
+- Showed "Rest fail: Raised" incorrectly
+
+NEW DETECTION (Simplified - Works Better):
+- Only 3 simple conditions
+- No more confusing "raised" checks
+- Easier to understand and debug
+
+NEW CONDITIONS:
+===============
+
+For "Rest: YES" to show, ALL 3 must be TRUE:
+
+1. LEFT FOREARM HORIZONTAL
+   abs(elbow.y - wrist.y) < threshold (default: 0.15)
+   → Forearm parallel to bottom of frame
+
+2. RIGHT FOREARM HORIZONTAL  
+   abs(elbow.y - wrist.y) < threshold (default: 0.15)
+   → Forearm parallel to bottom of frame
+
+3. HANDS SEPARATED
+   abs(left_wrist.x - right_wrist.x) > min_distance (default: 0.15)
+   → Hands are apart, not overlapping
+
+4. HANDS IN LOWER PORTION OF FRAME
+   wrist.y > 0.4 (Y increases downward)
+   → Hands in lower 60% of frame (not near face)
+
+WHAT CHANGED:
+=============
+
+REMOVED:
+  ✗ "Hands not raised above elbows" check
+  ✗ Confusing wrist.y vs elbow.y comparison
+  ✗ "Rest fail: Raised" message
+
+REPLACED WITH:
+  ✓ Simple Y-position check: hands.y > 0.4
+  ✓ Just checks if hands in lower part of frame
+  ✓ Clear "Why no rest:" messages
+
+WHY THIS IS BETTER:
+===================
+
+OLD: "Rest fail: Raised"
+  Problem: Confusing, often wrong
+  Cause: Complex elbow vs wrist coordinate check
+
+NEW: "Why no rest: Upper(L:0.35,R:0.38)"
+  Clear: Shows exact Y positions
+  Solution: Hands at Y=0.35 and 0.38 (upper 40% of frame)
+  Fix: If correct, lower threshold --horizontal... or adjust camera
+
+EXAMPLE DEBUG MESSAGES:
+=======================
+
+"Why no rest: L:0.18"
+  → Left forearm angle is 0.18 (need < 0.15)
+  → Solution: Use --horizontal-y-threshold 0.20
+
+"Why no rest: Sep:0.12"
+  → Hands separated by 0.12 (need > 0.15)
+  → Solution: Use --horizontal-min-distance 0.10
+
+"Why no rest: Upper(L:0.35,R:0.38)"  
+  → Hands at Y=35% and 38% (need > 40%, i.e., lower)
+  → Solution: This is correct! Hands ARE in upper portion
+  → Action: Position hands lower or adjust camera angle
+
+"Why no rest: Only 1 hand detected"
+  → MediaPipe sees only one hand
+  → Solution: Ensure both hands visible, improve lighting
+
+TESTING:
+========
+
+Run with relaxed settings:
+  python sign_activity_detector.py video.mp4 output/ \
+      --visualize \
+      --threshold 0.02 \
+      --horizontal-y-threshold 0.25 \
+      --horizontal-min-distance 0.08
+
+This allows:
+  - Forearm angles up to 25% (vs 15%)
+  - Hands closer together: 8% apart (vs 15%)
+  - Still requires hands in lower 60% of frame
+
+RESULT:
+=======
+
+"Rest: YES" will now show correctly when:
+  ✓ Both forearms are horizontal
+  ✓ Hands are separated
+  ✓ Hands are in lower part of frame (not near face/neck)
+
+No more confusing "Raised" messages!

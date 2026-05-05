@@ -1,0 +1,78 @@
+```
+HORIZONTAL IDLE DETECTION - IMPROVED METHOD
+============================================
+
+IMAGE 1: REST POSITION (IDLE - Correctly Detected)
+┌─────────────────────────────┐
+│         👤 Head             │
+│                             │
+│    🟢 Shoulder              │
+│      │                      │
+│      └──🟢 Elbow           │  ← Elbows
+│         │ (horizontal)      │
+│         └──🔵 Wrist ━━━━━  │  ← Wrists at/below elbows
+│                             │     Forearms horizontal
+└─────────────────────────────┘
+
+✓ Forearms: elbow.y ≈ wrist.y (horizontal) ✓
+✓ Position: wrist.y >= elbow.y (not raised) ✓
+✓ Separated: hands are apart ✓
+→ Result: IDLE ✓
+
+
+IMAGE 2: HANDS NEAR FACE (ACTIVE - Correctly NOT Idle)
+┌─────────────────────────────┐
+│    🔵──🔵 👤 Wrists        │  ← Wrists ABOVE elbows!
+│     🔵──🔵  Head            │     (near face/neck)
+│                             │
+│         🟢 Shoulder         │
+│          │                  │
+│          └──🟢 Elbow       │  ← Elbows below wrists
+│                             │
+│                             │
+└─────────────────────────────┘
+
+? Forearms: may be horizontal
+✗ Position: wrist.y < elbow.y (RAISED!) ✗
+? Separated: may be apart
+→ Result: ACTIVE (NOT idle) ✓
+
+
+SIGNING MOTION (ACTIVE)
+┌─────────────────────────────┐
+│         👤 Head             │
+│                             │
+│    🟢 Shoulder              │
+│   ┌──┘                      │
+│  🟢 Elbow (angled)          │  ← Forearms angled
+│   └─                        │     (not horizontal)
+│    🔵 Wrist                 │
+│     └─→ (moving)            │
+└─────────────────────────────┘
+
+✗ Forearms: elbow.y ≠ wrist.y (angled) ✗
+? Position: varies
+? Separated: varies
+→ Result: ACTIVE ✓
+
+
+KEY IMPROVEMENTS:
+═════════════════
+
+OLD METHOD:
+  Only checked: wrist₁.y ≈ wrist₂.y
+  Problem: Image 2 wrists ARE at similar Y → FALSE POSITIVE
+
+NEW METHOD:
+  Checks: elbow.y ≈ wrist.y (EACH forearm)
+       + wrist.y >= elbow.y (not raised)
+       + wrists separated
+  Result: Image 2 has raised wrists → CORRECTLY NOT IDLE
+
+
+LEGEND:
+🟢 = Elbow (pose landmark)
+🔵 = Wrist (hand landmark)
+━━ = Horizontal forearm
+│  = Vertical/angled
+```

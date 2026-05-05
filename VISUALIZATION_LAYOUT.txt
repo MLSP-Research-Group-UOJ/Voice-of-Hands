@@ -1,0 +1,103 @@
+ENHANCED VISUALIZATION LAYOUT
+================================
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEFT SIDE                            RIGHT SIDE (NEW!)       │
+│                                                              │
+│ IDLE (Horizontal Hands)              Resting: YES           │
+│ [Orange if horizontal rest]          [Orange if resting]    │
+│                                                              │
+│ Motion: 0.0123                       Status: IDLE           │
+│ [White text]                         [Gray if idle]         │
+│                                                              │
+│ Threshold: 0.0200                                           │
+│ [Cyan text]                                                 │
+│                                                              │
+│ Hands: YES                                                  │
+│ [Green if detected]                                         │
+│                                                              │
+│                                      Press 'q' to quit...   │
+└─────────────────────────────────────────────────────────────┘
+│                  VIDEO FRAME WITH LANDMARKS                  │
+│                                                              │
+│        🟢 (pose landmarks)    🔵 (hand landmarks)           │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+│              MOTION ENERGY GRAPH (BOTTOM)                    │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━░  │
+│  Green line (above threshold)   Gray line (below threshold)  │
+│  Yellow horizontal line = threshold                          │
+└─────────────────────────────────────────────────────────────┘
+
+
+LABEL MEANINGS:
+===============
+
+LEFT SIDE - Detailed Status:
+  • Status: Shows WHY frame is idle/active
+    - "ACTIVE SIGNING" (Green) = Active signing detected
+    - "IDLE (Horizontal Hands)" (Orange) = Resting position  
+    - "IDLE (Low Motion)" (Gray) = Below motion threshold
+  
+  • Motion: Current motion energy value
+  • Threshold: Motion threshold setting
+  • Hands: Whether hands are detected by MediaPipe
+
+RIGHT SIDE - Quick Status (NEW!):
+  • Resting: YES/NO
+    - YES (Orange) = Forearms horizontal, hands in rest position
+    - NO (Gray) = Not in rest position
+  
+  • Status: ACTIVE/IDLE
+    - ACTIVE (Green) = Currently signing
+    - IDLE (Gray) = Currently idle
+
+
+EXAMPLE SCENARIOS:
+==================
+
+Scenario 1: Hands resting at waist
+┌────────────────────────────────────┐
+│ IDLE (Horizontal Hands)  Rest: YES│
+│ Motion: 0.0050           Status: I │
+│ Threshold: 0.0200                  │
+│ Hands: YES                         │
+└────────────────────────────────────┘
+→ Clearly shows: In rest position, idle
+
+Scenario 2: Hands near face (signing)
+┌────────────────────────────────────┐
+│ ACTIVE SIGNING           Rest: NO  │
+│ Motion: 0.0350           Status: A │
+│ Threshold: 0.0200                  │
+│ Hands: YES                         │
+└────────────────────────────────────┘
+→ Clearly shows: Not resting, active
+
+Scenario 3: Active signing motion
+┌────────────────────────────────────┐
+│ ACTIVE SIGNING           Rest: NO  │
+│ Motion: 0.0450           Status: A │
+│ Threshold: 0.0200                  │
+│ Hands: YES                         │
+└────────────────────────────────────┘
+→ Clearly shows: Not resting, active signing
+
+
+COLOR CODING:
+=============
+🟢 Green    = Active/Detected
+🟠 Orange   = Resting position
+⚪ Gray     = Idle/Not detected  
+🔵 Cyan     = Threshold reference
+⚪ White    = Neutral info
+
+
+USAGE:
+======
+python sign_activity_detector.py video.mp4 output/ --visualize --threshold 0.02
+
+Watch the right side labels to quickly see:
+  • "Resting: YES" → Hands in horizontal rest position
+  • "Resting: NO" → Hands not in rest position
+  • "Status: ACTIVE/IDLE" → Current activity state

@@ -1,0 +1,23 @@
+{
+  "source_video": "output_signer_dataset/full_cropped/output_short_sli_cropped.mp4",
+  "total_duration": 347.03333333333336,
+  "active_time": 3.033333333333333,
+  "idle_time": 344.0,
+  "hands_detected_pct": 95.92198581560284,
+  "motion_threshold": 0.01,
+  "min_active_duration": 1.0,
+  "clips": [
+    {
+      "path": "results5/active_001_6.7s-7.7s.mp4",
+      "start": 6.67,
+      "end": 7.73,
+      "duration": 1.07
+    },
+    {
+      "path": "results5/active_002_13.0s-14.9s.mp4",
+      "start": 12.97,
+      "end": 14.93,
+      "duration": 1.97
+    }
+  ]
+}

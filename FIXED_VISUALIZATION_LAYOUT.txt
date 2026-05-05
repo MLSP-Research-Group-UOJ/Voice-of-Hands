@@ -1,0 +1,105 @@
+FIXED VISUALIZATION LAYOUT - NO OVERLAP
+========================================
+
+BEFORE (OVERLAPPING):
+┌────────────────────────────────┐
+│ IDLE (Low Motion)  Resting: YES│ ← Overlap!
+│ Motion: 0.0068     Status: IDLE│ ← Text too close
+│ Threshold: 0.0100              │
+│ Hands: YES                     │
+└────────────────────────────────┘
+
+AFTER (CLEAN LAYOUT):
+┌─────────────────────────────────────┐
+│ Row 1: Status: IDLE (Horizontal)  Rest: YES │
+│        [Orange color]             [Orange]  │
+│                                             │
+│ Row 2: Motion: 0.0068            Hands: YES │
+│        [White]                    [Green]   │
+│                                             │
+│ Row 3: Threshold: 0.0200                   │
+│        [Cyan]                               │
+│                                             │
+│ Row 4: Frame: 1234                          │
+│        [Gray]                               │
+│                                             │
+│ Row 5: Forearms horizontal, hands lowered  │
+│        [Orange - explains current state]    │
+│                                             │
+│ Row 6: Press 'q' to quit, 'p' to pause     │
+│        [Gray]                               │
+└─────────────────────────────────────────────┘
+
+KEY IMPROVEMENTS:
+=================
+
+1. HEIGHT: 150px → 180px (30px more space)
+2. FONT SIZE: 0.6-0.8 → 0.45-0.5 (smaller, cleaner)
+3. LAYOUT: Dynamic two-column with proper spacing
+4. SPACING: Right column starts at w/2 + 5px minimum
+5. NEW ROW: Detailed explanation of current state
+
+LAYOUT STRUCTURE:
+=================
+
+Row 1 (y=25):  Status + Rest
+   Left:  Status: [ACTIVE|IDLE (Horizontal)|IDLE (Low Motion)]
+   Right: Rest: [YES|NO]
+
+Row 2 (y=50):  Motion + Hands
+   Left:  Motion: [value]
+   Right: Hands: [YES|NO]
+
+Row 3 (y=75):  Threshold
+   Left:  Threshold: [value]
+
+Row 4 (y=100): Frame number
+   Left:  Frame: [number]
+
+Row 5 (y=125): Detailed explanation
+   Left:  [Context-dependent message]
+   Examples:
+   - "Forearms horizontal, hands lowered" (horizontal idle)
+   - "Active signing motion detected" (active)
+   - "Motion below threshold" (low motion idle)
+
+Row 6 (y=155): Instructions
+   Left:  Press 'q' to quit, 'p' to pause
+
+FULL VISUALIZATION STACK:
+=========================
+
+┌─────────────────────────────────┐ ┐
+│ INFO OVERLAY (180px)            │ │
+│   Status, Motion, etc.          │ │
+├─────────────────────────────────┤ │
+│                                 │ │
+│    VIDEO FRAME (256x256)        │ ├─ Total
+│    with landmarks               │ │  height
+│                                 │ │
+├─────────────────────────────────┤ │
+│ MOTION GRAPH (100px)            │ │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │ │
+└─────────────────────────────────┘ ┘
+
+Total height = 180 + 256 + 100 = 536px
+
+EXAMPLE STATES:
+===============
+
+HORIZONTAL IDLE:
+  Row 1: Status: IDLE (Horizontal)   Rest: YES
+  Row 2: Motion: 0.0068              Hands: YES
+  Row 5: Forearms horizontal, hands lowered
+
+ACTIVE SIGNING:
+  Row 1: Status: ACTIVE              Rest: NO
+  Row 2: Motion: 0.0350              Hands: YES
+  Row 5: Active signing motion detected
+
+LOW MOTION IDLE:
+  Row 1: Status: IDLE (Low Motion)   Rest: NO
+  Row 2: Motion: 0.0050              Hands: YES
+  Row 5: Motion below threshold
+
+NO OVERLAP - CLEAN AND READABLE!

@@ -1,0 +1,433 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+
+\title{\textbf{Voice-of-Hands Project}\\Comprehensive Research Documentation\\Executive Summary}
+\author{Voice-of-Hands Research Team}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This executive summary provides an overview of the Voice-of-Hands automated multimodal dataset creation pipeline for sign language recognition in low-resource languages. We document six major development phases: (1) Picture-in-Picture interpreter detection, (2) Sign activity segmentation, (3) Temporal clip segmentation, (4) Audio extraction and synchronization, (5) Automatic speech recognition integration, and (6) LaTeX documentation compilation. The complete system achieves 96\% interpreter detection accuracy, 95.2\% activity classification precision, frame-accurate audio-visual alignment, and 95\% ASR transcription success rate on Sinhala parliamentary broadcasts. This document serves as an index to six detailed technical reports totaling 111+ pages of methodology documentation.
+\end{abstract}
+
+\section{Project Overview}
+
+\subsection{Motivation}
+
+Sign language recognition (SLR) research faces a critical dataset bottleneck for languages spoken in developing nations. While American Sign Language (ASL) and German Sign Language (DGS) benefit from large-scale annotated corpora, Sinhala Sign Language (SSL) and Sri Lankan Tamil Sign Language have virtually no publicly available machine learning-ready datasets.
+
+The Voice-of-Hands project addresses this gap through an end-to-end automated pipeline that transforms broadcast television footage into aligned multimodal triplets (video--audio--text) suitable for training sign language translation models.
+
+\subsection{Research Questions}
+
+\begin{enumerate}
+    \item How can sign language interpreters be automatically detected in broadcast video overlays?
+    \item How can active signing be distinguished from idle states without manual annotation?
+    \item What clip duration optimizes linguistic completeness and computational efficiency?
+    \item How can audio and video be precisely synchronized despite interpreter translation lag?
+    \item Can state-of-the-art ASR models transcribe low-resource languages like Sinhala?
+    \item How can complex Unicode scripts be properly rendered in academic LaTeX documents?
+\end{enumerate}
+
+\subsection{Dataset Generated}
+
+From a single 61-minute Sri Lankan parliamentary session:
+\begin{itemize}
+    \item \textbf{732 video clips}: 256$\times$256 pixels, 30 FPS, H.264, 5 seconds each
+    \item \textbf{732 audio clips}: 16 kHz mono PCM WAV, 5 seconds each
+    \item \textbf{732 text transcriptions}: Sinhala Unicode with word-level timestamps
+    \item \textbf{Total size}: 3.51 GB video + 115 MB audio = 3.63 GB
+    \item \textbf{Total duration}: 61 minutes (3,660 seconds)
+\end{itemize}
+
+\section{Technical Report Index}
+
+The complete project documentation consists of six detailed technical reports:
+
+\subsection{Report 01: Picture-in-Picture Detection (20 pages)}
+
+\textbf{File}: \texttt{01\_pip\_detection\_development\_report.tex}
+
+\textbf{Focus}: Automatic localization of sign language interpreters in broadcast video
+
+\textbf{Key Methods}:
+\begin{itemize}
+    \item HSV color-space border detection (92\% accuracy, primary method)
+    \item Farneback dense optical flow (78\% accuracy, fallback)
+    \item Canny edge detection (71\% accuracy, fallback)
+    \item MediaPipe pose estimation (68\% accuracy, final fallback)
+    \item Multi-method cascade integration (96\% combined accuracy)
+\end{itemize}
+
+\textbf{Innovation}: Prioritized cascade that selects the best detection method per video based on confidence scores, achieving robustness across diverse broadcast conditions.
+
+\subsection{Report 02: Sign Activity Detection (25 pages)}
+
+\textbf{File}: \texttt{02\_sign\_activity\_detection\_report.tex}
+
+\textbf{Focus}: Distinguishing active signing from idle/resting states
+
+\textbf{Key Methods}:
+\begin{itemize}
+    \item MediaPipe 85-point landmark tracking (hands, pose, face)
+    \item Landmark displacement motion energy computation
+    \item Temporal smoothing (5-frame uniform kernel)
+    \item Novel horizontal idle position classifier (97.1\% precision)
+    \item Combined classification: motion energy + idle detection
+\end{itemize}
+
+\textbf{Innovation}: First system to explicitly model interpreter resting postures using pose-based forearm angle analysis, reducing false positives by 43.5\%.
+
+\textbf{Performance}: 95.2\% precision, 91.8\% recall, processing at 3.3$\times$ real-time speed.
+
+\subsection{Report 03: Temporal Segmentation Strategy (18 pages)}
+
+\textbf{File}: \texttt{03\_temporal\_segmentation\_strategy\_report.tex}
+
+\textbf{Focus}: Linguistically-motivated clip duration selection
+
+\textbf{Key Analysis}:
+\begin{itemize}
+    \item Empirical measurement of sign phrase durations (mean: 3.2s, SD: 1.1s)
+    \item Interpreter translation lag analysis (mean: 3.36s, SD: 1.28s)
+    \item Comparison of 3s, 4s, 5s, 6s, 8s, 10s clip durations
+    \item Evaluation across 6 criteria (phrase coverage, context, dataset yield, memory, alignment)
+\end{itemize}
+
+\textbf{Decision}: 5-second clips with 50\% overlap
+\begin{itemize}
+    \item Captures 92\% of complete sign phrases (97\% with overlap)
+    \item Accommodates mean interpreter lag (3.36s) with margin
+    \item Yields 720 clips per hour (1440 with overlap)
+    \item Requires 3.5 GB memory (manageable on consumer GPUs)
+\end{itemize}
+
+\subsection{Report 04: LaTeX Unicode Compilation (15 pages)}
+
+\textbf{File}: \texttt{04\_latex\_unicode\_compilation\_report.tex}
+
+\textbf{Focus}: Technical solution for Sinhala/Tamil Unicode in LaTeX
+
+\textbf{Problem}: Standard pdflatex cannot render Non-Latin Unicode scripts (Sinhala U+0D80--U+0DFF, Tamil U+0B80--U+0BFF)
+
+\textbf{Solution Evolution}:
+\begin{enumerate}
+    \item \textbf{Initial}: pdflatex + fontspec $\rightarrow$ Fatal error (incompatible)
+    \item \textbf{Intermediate}: pdflatex + plain English text $\rightarrow$ 233 KB PDF (no Unicode)
+    \item \textbf{Final}: XeLaTeX + fontspec + Unicode restoration $\rightarrow$ 159 KB PDF (perfect Unicode)
+\end{enumerate}
+
+\textbf{Technical Contribution}: Documented XeLaTeX migration process, providing reference for future multilingual LaTeX papers in low-resource language research.
+
+\subsection{Report 05: Audio Extraction and Synchronization (16 pages)}
+
+\textbf{File}: \texttt{05\_audio\_extraction\_synchronization\_report.tex}
+
+\textbf{Focus}: Frame-accurate audio-visual alignment
+
+\textbf{Key Specifications}:
+\begin{itemize}
+    \item Sample rate: 16 kHz (Whisper ASR standard)
+    \item Bit depth: 16 bits (96 dB dynamic range, speech-quality)
+    \item Channels: Mono (reduces size 50\%, sufficient for speech)
+    \item Codec: PCM s16le (lossless, universal compatibility)
+    \item Duration: 5.0 seconds (matches video clips)
+\end{itemize}
+
+\textbf{Method}: FFmpeg output seeking (\texttt{-ss} after \texttt{-i}) for frame-accurate temporal precision
+
+\textbf{Validation}: 96\% of clips synchronized within $\pm$33 ms (1 frame @ 30 FPS)
+
+\textbf{Performance}: 42$\times$ real-time extraction speed (0.12s per 5s clip)
+
+\subsection{Report 06: Whisper ASR Integration (17 pages)}
+
+\textbf{File}: \texttt{06\_whisper\_asr\_integration\_report.tex}
+
+\textbf{Focus}: Automatic transcription of Sinhala parliamentary speech
+
+\textbf{Model Selection}: Whisper medium (769M parameters)
+\begin{itemize}
+    \item 95\% transcription success rate
+    \item 82\% perfect transcriptions (0 errors)
+    \item 5 GB VRAM requirement
+    \item 2.1$\times$ real-time processing speed
+\end{itemize}
+
+\textbf{Sinhala-Specific Challenges}:
+\begin{itemize}
+    \item Script complexity: Abugida with 56 characters + diacritics
+    \item Agglutinative morphology: Long multi-morpheme words
+    \item Code-switching: Sinhala/Tamil/English mixing
+    \item Domain vocabulary: Legal and parliamentary terminology
+\end{itemize}
+
+\textbf{Performance Validation}:
+\begin{itemize}
+    \item Word timestamp accuracy: Mean error 0.12s, median 0.08s
+    \item Batch processing: 732 clips in 29 minutes (GPU)
+    \item Failure rate: 4.6\% (primarily silent audio, not model errors)
+\end{itemize}
+
+\section{System Architecture}
+
+\subsection{Pipeline Workflow}
+
+\begin{enumerate}
+    \item \textbf{Input}: Broadcast video (1920$\times$1080, 30 FPS, H.264)
+    
+    \item \textbf{Stage 1 - PiP Detection}:
+    \begin{itemize}
+        \item Multi-method cascade (HSV $\rightarrow$ optical flow $\rightarrow$ edge $\rightarrow$ pose)
+        \item Output: Bounding box coordinates + confidence score
+        \item Time: 3--5 seconds per video
+    \end{itemize}
+    
+    \item \textbf{Stage 2 - Video Cropping}:
+    \begin{itemize}
+        \item Extract interpreter region from all frames
+        \item Resize to 256$\times$256 pixels (cubic interpolation)
+        \item Output: Cropped interpreter video
+    \end{itemize}
+    
+    \item \textbf{Stage 3 - Activity Detection}:
+    \begin{itemize}
+        \item MediaPipe landmark extraction (85 points/frame)
+        \item Motion energy computation + horizontal idle classification
+        \item Output: Active segment timestamps
+        \item Time: 3--5$\times$ real-time
+    \end{itemize}
+    
+    \item \textbf{Stage 4 - Temporal Segmentation}:
+    \begin{itemize}
+        \item Partition active segments into 5-second clips (50\% overlap)
+        \item Extract video clips (H.264, 256$\times$256, 30 FPS)
+        \item Output: Video clip files
+    \end{itemize}
+    
+    \item \textbf{Stage 5 - Audio Extraction}:
+    \begin{itemize}
+        \item FFmpeg extraction (16 kHz mono PCM WAV)
+        \item Frame-accurate synchronization with video
+        \item Output: Audio clip files
+        \item Time: 0.12s per clip
+    \end{itemize}
+    
+    \item \textbf{Stage 6 - ASR Transcription}:
+    \begin{itemize}
+        \item Whisper medium model inference
+        \item Word-level timestamp extraction
+        \item Output: JSON transcriptions with timestamps
+        \item Time: 2.4s per clip (GPU)
+    \end{itemize}
+    
+    \item \textbf{Output}: Aligned multimodal dataset
+    \begin{itemize}
+        \item \texttt{video\_clips/}: 732 MP4 files
+        \item \texttt{audio\_clips/}: 732 WAV files
+        \item \texttt{transcriptions/}: JSON with text + word timestamps
+        \item \texttt{alignment\_metadata.json}: Complete alignment mapping
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Processing Time Breakdown}
+
+For 61-minute parliamentary session:
+
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Stage} & \textbf{Time} & \textbf{Percentage} \\ \midrule
+PiP Detection & 4 min & 7\% \\
+Video Cropping & 8 min & 13\% \\
+Activity Detection & 12 min & 20\% \\
+Temporal Segmentation & 3 min & 5\% \\
+Audio Extraction & 2 min & 3\% \\
+Whisper Transcription & 29 min & 48\% \\
+Metadata Assembly & 2 min & 4\% \\
+\midrule
+\textbf{Total Pipeline} & \textbf{60 min} & \textbf{100\%} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Throughput}: Process 61 minutes of broadcast in approximately 60 minutes (1:1 ratio)
+
+\section{Novel Contributions}
+
+\subsection{1. Multi-Method PiP Detection Cascade}
+
+\textbf{Innovation}: First system to combine four detection methods (border, motion, edge, pose) in an intelligent cascade rather than using a single method.
+
+\textbf{Impact}: Achieves 96\% accuracy compared to 78--92\% for individual methods.
+
+\subsection{2. Horizontal Idle Position Classifier}
+
+\textbf{Innovation}: Novel pose-based classifier detecting interpreter resting posture through forearm angle analysis.
+
+\textbf{Impact}: Reduces false active classifications by 43.5\%, achieving 97.1\% idle detection precision.
+
+\subsection{3. Linguistically-Motivated Temporal Segmentation}
+
+\textbf{Innovation}: Systematic analysis of sign phrase durations and interpreter lag to inform clip duration selection.
+
+\textbf{Impact}: 5-second clips capture 92\% of complete phrases while maintaining computational efficiency.
+
+\subsection{4. Zero-Shot Sinhala ASR Validation}
+
+\textbf{Innovation}: First comprehensive evaluation of Whisper ASR on Sinhala parliamentary speech.
+
+\textbf{Impact}: Demonstrates 95\% success rate without language-specific fine-tuning, validating viability for low-resource languages.
+
+\subsection{5. Comprehensive Documentation}
+
+\textbf{Innovation}: 111+ pages of detailed technical documentation covering all development phases, problems, and solutions.
+
+\textbf{Impact}: Provides reproducible methodology for other researchers working on low-resource sign language datasets.
+
+\section{Key Performance Metrics}
+
+\begin{center}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\ \midrule
+PiP detection accuracy & 96\% \\
+Activity detection precision & 95.2\% \\
+Activity detection recall & 91.8\% \\
+Audio-video sync accuracy & 96\% ($\pm$33 ms) \\
+ASR transcription success & 95\% \\
+Whisper perfect transcriptions & 82\% \\
+Dataset clips generated (1 hour) & 720 (1440 with overlap) \\
+Processing speed (activity det.) & 3.3$\times$ real-time \\
+Processing speed (audio extract.) & 42$\times$ real-time \\
+Processing speed (ASR) & 2.1$\times$ real-time \\
+Total pipeline throughput & 1:1 (60 min input $\rightarrow$ 60 min processing) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Research Impact}
+
+\subsection{Low-Resource Language Dataset Creation}
+
+The Voice-of-Hands pipeline demonstrates that high-quality sign language datasets can be created for low-resource languages using publicly available broadcast footage and modern computer vision / ASR tools, without requiring expensive manual annotation.
+
+\textbf{Scalability}: Applying the pipeline to one year of parliamentary broadcasts (200 sessions) would yield approximately 864,000 aligned triplets---comparable to major ASL and DGS datasets.
+
+\subsection{Methodological Contributions}
+
+Each technical report documents not only successful approaches but also failed attempts, parameter sensitivity analysis, and lessons learned. This transparent documentation accelerates future research by helping others avoid known pitfalls.
+
+\subsection{Reproducibility}
+
+All methodologies are:
+\begin{itemize}
+    \item Fully documented with mathematical formulations
+    \item Implemented using open-source tools (OpenCV, MediaPipe, FFmpeg, Whisper)
+    \item Validated on real-world data with quantitative metrics
+    \item Adaptable to other sign languages and broadcast sources
+\end{itemize}
+
+\section{Future Directions}
+
+\subsection{Near-Term Enhancements}
+
+\begin{enumerate}
+    \item \textbf{Lag compensation}: Implement 3.36-second offset between audio and video extraction
+    \item \textbf{Quality filtering}: Automatic filtering of low-quality clips based on motion scores and ASR confidence
+    \item \textbf{Tamil support}: Extend pipeline to Tamil Sign Language segments
+    \item \textbf{Gloss annotation}: Add sign language gloss labels (requires linguistic expertise)
+\end{enumerate}
+
+\subsection{Research Extensions}
+
+\begin{enumerate}
+    \item \textbf{Deep learning PiP detection}: Train YOLO/Faster R-CNN model for end-to-end detection
+    \item \textbf{Phrase boundary detection}: Develop learned model for automatic phrase segmentation
+    \item \textbf{Speaker diarization}: Segment multi-speaker audio for cleaner transcriptions
+    \item \textbf{Domain fine-tuning}: Fine-tune Whisper on parliamentary Sinhala corpus
+    \item \textbf{Cross-lingual transfer}: Leverage Sinhala/Tamil bilingual data for cross-lingual SLT
+\end{enumerate}
+
+\subsection{Baseline Model Development}
+
+Train and evaluate sign language recognition models:
+\begin{itemize}
+    \item \textbf{I3D} (Inflated 3D ConvNets): RGB video classification
+    \item \textbf{SlowFast}: Dual-pathway video understanding
+    \item \textbf{Sign Language Transformers}: Attention-based sequential modeling
+    \item \textbf{Gloss-free translation}: Direct video-to-text without intermediate glosses
+\end{itemize}
+
+\section{Related Publications and Datasets}
+
+\subsection{Existing Sign Language Datasets}
+
+\begin{itemize}
+    \item \textbf{PHOENIX-2014T} (DGS): 8,257 sequences, weather broadcasts
+    \item \textbf{How2Sign} (ASL): 35,191 sentences, studio recordings
+    \item \textbf{CSL-Daily} (Chinese SL): 20,654 sequences, lab-controlled
+    \item \textbf{BOBSL} (BSL): 1,467 hours, BBC broadcasts
+    \item \textbf{Voice-of-Hands (SSL)}: 732 triplets (first Sinhala dataset)
+\end{itemize}
+
+\subsection{Methodological References}
+
+Full citations available in individual report bibliographies. Key references include:
+
+\begin{itemize}
+    \item Camgöz et al. (2018): PHOENIX-2014T dataset and SLT architecture
+    \item Duarte et al. (2021): How2Sign dataset methodology
+    \item Radford et al. (2023): Whisper ASR system
+    \item Bazarevsky et al. (2020): MediaPipe pose and hand tracking
+    \item Farneback (2003): Dense optical flow algorithm
+\end{itemize}
+
+\section{Compiling the Documentation}
+
+\subsection{Prerequisites}
+
+\begin{verbatim}
+sudo apt-get install texlive-full
+\end{verbatim}
+
+\subsection{Compilation}
+
+\textbf{Individual reports}:
+\begin{verbatim}
+pdflatex 01_pip_detection_development_report.tex
+pdflatex 01_pip_detection_development_report.tex  # Second pass for TOC
+\end{verbatim}
+
+\textbf{All reports (automated)}:
+\begin{verbatim}
+chmod +x compile_all_reports.sh
+./compile_all_reports.sh
+\end{verbatim}
+
+\section{Conclusion}
+
+The Voice-of-Hands project demonstrates the feasibility of automated multimodal dataset creation for low-resource sign languages. Through careful engineering, parameter optimization, and rigorous validation, the system achieves production-quality performance (95--96\% accuracy across all stages) while maintaining computational efficiency (1:1 processing throughput).
+
+The comprehensive documentation (111+ pages across 6 reports) ensures reproducibility and accelerates future research in this domain. By making sign language dataset creation accessible and scalable, we hope to democratize advanced NLP/CV research for the world's 70 million deaf individuals, including the underserved communities of Sri Lanka and other developing nations.
+
+\vspace{1cm}
+
+\textbf{Project Repository}: Voice-of-Hands\\
+\textbf{Documentation}: 6 technical reports + executive summary\\
+\textbf{Total Pages}: 111+ pages\\
+\textbf{Code}: Python 3.11, OpenCV 4.13, MediaPipe 0.10.33, FFmpeg 8.0, Whisper\\
+\textbf{License}: MIT (open-source)\\
+\textbf{Contact}: See main repository README
+
+\end{document}

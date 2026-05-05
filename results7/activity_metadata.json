@@ -1,0 +1,389 @@
+{
+  "source_video": "output_signer_dataset/full_cropped/output_short_sli_cropped.mp4",
+  "total_duration": 347.03333333333336,
+  "active_time": 184.93333333333314,
+  "idle_time": 162.10000000000022,
+  "hands_detected_pct": 82.71059456344251,
+  "motion_threshold": 0.01,
+  "min_active_duration": 1.0,
+  "clips": [
+    {
+      "path": "results7/active_001_6.7s-7.7s.mp4",
+      "start": 6.67,
+      "end": 7.73,
+      "duration": 1.07
+    },
+    {
+      "path": "results7/active_002_13.0s-14.9s.mp4",
+      "start": 12.97,
+      "end": 14.93,
+      "duration": 1.97
+    },
+    {
+      "path": "results7/active_003_18.6s-20.9s.mp4",
+      "start": 18.6,
+      "end": 20.87,
+      "duration": 2.27
+    },
+    {
+      "path": "results7/active_004_23.1s-27.3s.mp4",
+      "start": 23.07,
+      "end": 27.33,
+      "duration": 4.27
+    },
+    {
+      "path": "results7/active_005_35.0s-40.2s.mp4",
+      "start": 34.97,
+      "end": 40.17,
+      "duration": 5.2
+    },
+    {
+      "path": "results7/active_006_41.2s-42.3s.mp4",
+      "start": 41.17,
+      "end": 42.3,
+      "duration": 1.13
+    },
+    {
+      "path": "results7/active_007_44.0s-45.0s.mp4",
+      "start": 43.97,
+      "end": 44.97,
+      "duration": 1.0
+    },
+    {
+      "path": "results7/active_008_48.2s-51.1s.mp4",
+      "start": 48.17,
+      "end": 51.13,
+      "duration": 2.97
+    },
+    {
+      "path": "results7/active_009_58.0s-59.2s.mp4",
+      "start": 58.03,
+      "end": 59.23,
+      "duration": 1.2
+    },
+    {
+      "path": "results7/active_010_59.9s-61.3s.mp4",
+      "start": 59.87,
+      "end": 61.27,
+      "duration": 1.4
+    },
+    {
+      "path": "results7/active_011_65.6s-68.1s.mp4",
+      "start": 65.57,
+      "end": 68.13,
+      "duration": 2.57
+    },
+    {
+      "path": "results7/active_012_69.2s-71.2s.mp4",
+      "start": 69.17,
+      "end": 71.2,
+      "duration": 2.03
+    },
+    {
+      "path": "results7/active_013_72.9s-74.5s.mp4",
+      "start": 72.87,
+      "end": 74.53,
+      "duration": 1.67
+    },
+    {
+      "path": "results7/active_014_75.9s-78.1s.mp4",
+      "start": 75.87,
+      "end": 78.13,
+      "duration": 2.27
+    },
+    {
+      "path": "results7/active_015_84.7s-86.8s.mp4",
+      "start": 84.7,
+      "end": 86.8,
+      "duration": 2.1
+    },
+    {
+      "path": "results7/active_016_87.9s-89.1s.mp4",
+      "start": 87.87,
+      "end": 89.1,
+      "duration": 1.23
+    },
+    {
+      "path": "results7/active_017_92.7s-93.7s.mp4",
+      "start": 92.67,
+      "end": 93.73,
+      "duration": 1.07
+    },
+    {
+      "path": "results7/active_018_95.8s-98.8s.mp4",
+      "start": 95.8,
+      "end": 98.83,
+      "duration": 3.03
+    },
+    {
+      "path": "results7/active_019_103.2s-104.3s.mp4",
+      "start": 103.17,
+      "end": 104.33,
+      "duration": 1.17
+    },
+    {
+      "path": "results7/active_020_114.1s-115.5s.mp4",
+      "start": 114.07,
+      "end": 115.53,
+      "duration": 1.47
+    },
+    {
+      "path": "results7/active_021_118.6s-120.8s.mp4",
+      "start": 118.6,
+      "end": 120.83,
+      "duration": 2.23
+    },
+    {
+      "path": "results7/active_022_121.8s-123.0s.mp4",
+      "start": 121.77,
+      "end": 123.0,
+      "duration": 1.23
+    },
+    {
+      "path": "results7/active_023_125.3s-128.1s.mp4",
+      "start": 125.27,
+      "end": 128.1,
+      "duration": 2.83
+    },
+    {
+      "path": "results7/active_024_136.4s-140.4s.mp4",
+      "start": 136.37,
+      "end": 140.4,
+      "duration": 4.03
+    },
+    {
+      "path": "results7/active_025_142.6s-143.8s.mp4",
+      "start": 142.63,
+      "end": 143.8,
+      "duration": 1.17
+    },
+    {
+      "path": "results7/active_026_144.5s-152.2s.mp4",
+      "start": 144.47,
+      "end": 152.2,
+      "duration": 7.73
+    },
+    {
+      "path": "results7/active_027_153.1s-154.8s.mp4",
+      "start": 153.07,
+      "end": 154.8,
+      "duration": 1.73
+    },
+    {
+      "path": "results7/active_028_155.3s-157.5s.mp4",
+      "start": 155.33,
+      "end": 157.5,
+      "duration": 2.17
+    },
+    {
+      "path": "results7/active_029_158.3s-159.3s.mp4",
+      "start": 158.27,
+      "end": 159.33,
+      "duration": 1.07
+    },
+    {
+      "path": "results7/active_030_160.2s-166.7s.mp4",
+      "start": 160.23,
+      "end": 166.67,
+      "duration": 6.43
+    },
+    {
+      "path": "results7/active_031_167.2s-169.2s.mp4",
+      "start": 167.2,
+      "end": 169.23,
+      "duration": 2.03
+    },
+    {
+      "path": "results7/active_032_170.0s-171.0s.mp4",
+      "start": 169.97,
+      "end": 171.0,
+      "duration": 1.03
+    },
+    {
+      "path": "results7/active_033_171.7s-175.7s.mp4",
+      "start": 171.73,
+      "end": 175.73,
+      "duration": 4.0
+    },
+    {
+      "path": "results7/active_034_176.4s-178.2s.mp4",
+      "start": 176.43,
+      "end": 178.23,
+      "duration": 1.8
+    },
+    {
+      "path": "results7/active_035_183.1s-184.6s.mp4",
+      "start": 183.1,
+      "end": 184.6,
+      "duration": 1.5
+    },
+    {
+      "path": "results7/active_036_185.8s-187.2s.mp4",
+      "start": 185.83,
+      "end": 187.2,
+      "duration": 1.37
+    },
+    {
+      "path": "results7/active_037_190.6s-192.9s.mp4",
+      "start": 190.63,
+      "end": 192.93,
+      "duration": 2.3
+    },
+    {
+      "path": "results7/active_038_196.3s-197.3s.mp4",
+      "start": 196.27,
+      "end": 197.3,
+      "duration": 1.03
+    },
+    {
+      "path": "results7/active_039_200.8s-205.7s.mp4",
+      "start": 200.77,
+      "end": 205.7,
+      "duration": 4.93
+    },
+    {
+      "path": "results7/active_040_206.3s-210.9s.mp4",
+      "start": 206.27,
+      "end": 210.93,
+      "duration": 4.67
+    },
+    {
+      "path": "results7/active_041_211.8s-215.2s.mp4",
+      "start": 211.77,
+      "end": 215.2,
+      "duration": 3.43
+    },
+    {
+      "path": "results7/active_042_215.8s-217.3s.mp4",
+      "start": 215.77,
+      "end": 217.27,
+      "duration": 1.5
+    },
+    {
+      "path": "results7/active_043_217.8s-219.2s.mp4",
+      "start": 217.77,
+      "end": 219.23,
+      "duration": 1.47
+    },
+    {
+      "path": "results7/active_044_219.8s-222.3s.mp4",
+      "start": 219.83,
+      "end": 222.3,
+      "duration": 2.47
+    },
+    {
+      "path": "results7/active_045_224.5s-226.5s.mp4",
+      "start": 224.47,
+      "end": 226.5,
+      "duration": 2.03
+    },
+    {
+      "path": "results7/active_046_228.4s-233.3s.mp4",
+      "start": 228.37,
+      "end": 233.3,
+      "duration": 4.93
+    },
+    {
+      "path": "results7/active_047_235.2s-239.7s.mp4",
+      "start": 235.17,
+      "end": 239.73,
+      "duration": 4.57
+    },
+    {
+      "path": "results7/active_048_242.1s-243.1s.mp4",
+      "start": 242.07,
+      "end": 243.13,
+      "duration": 1.07
+    },
+    {
+      "path": "results7/active_049_247.4s-248.5s.mp4",
+      "start": 247.37,
+      "end": 248.53,
+      "duration": 1.17
+    },
+    {
+      "path": "results7/active_050_252.5s-254.1s.mp4",
+      "start": 252.47,
+      "end": 254.1,
+      "duration": 1.63
+    },
+    {
+      "path": "results7/active_051_255.5s-258.0s.mp4",
+      "start": 255.53,
+      "end": 258.0,
+      "duration": 2.47
+    },
+    {
+      "path": "results7/active_052_261.8s-263.6s.mp4",
+      "start": 261.77,
+      "end": 263.6,
+      "duration": 1.83
+    },
+    {
+      "path": "results7/active_053_264.8s-275.1s.mp4",
+      "start": 264.77,
+      "end": 275.13,
+      "duration": 10.37
+    },
+    {
+      "path": "results7/active_054_277.1s-278.3s.mp4",
+      "start": 277.07,
+      "end": 278.33,
+      "duration": 1.27
+    },
+    {
+      "path": "results7/active_055_279.1s-284.9s.mp4",
+      "start": 279.13,
+      "end": 284.9,
+      "duration": 5.77
+    },
+    {
+      "path": "results7/active_056_295.8s-296.9s.mp4",
+      "start": 295.8,
+      "end": 296.93,
+      "duration": 1.13
+    },
+    {
+      "path": "results7/active_057_298.1s-300.1s.mp4",
+      "start": 298.07,
+      "end": 300.13,
+      "duration": 2.07
+    },
+    {
+      "path": "results7/active_058_300.7s-302.9s.mp4",
+      "start": 300.67,
+      "end": 302.93,
+      "duration": 2.27
+    },
+    {
+      "path": "results7/active_059_303.7s-308.6s.mp4",
+      "start": 303.67,
+      "end": 308.57,
+      "duration": 4.9
+    },
+    {
+      "path": "results7/active_060_309.6s-313.9s.mp4",
+      "start": 309.57,
+      "end": 313.9,
+      "duration": 4.33
+    },
+    {
+      "path": "results7/active_061_315.9s-325.9s.mp4",
+      "start": 315.87,
+      "end": 325.93,
+      "duration": 10.07
+    },
+    {
+      "path": "results7/active_062_326.6s-339.8s.mp4",
+      "start": 326.57,
+      "end": 339.83,
+      "duration": 13.27
+    },
+    {
+      "path": "results7/active_063_342.1s-346.6s.mp4",
+      "start": 342.07,
+      "end": 346.63,
+      "duration": 4.57
+    }
+  ]
+}

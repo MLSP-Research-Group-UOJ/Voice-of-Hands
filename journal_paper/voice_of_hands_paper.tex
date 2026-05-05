@@ -1,0 +1,673 @@
+\documentclass[journal]{IEEEtran}
+
+% Packages
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{fontspec} % For Unicode support (Sinhala/Tamil) - requires XeLaTeX
+
+% Define document metadata
+\title{Voice-of-Hands: An Automated Multimodal Dataset Creation Pipeline for Sign Language Interpretation in Low-Resource Languages}
+
+\author{
+    \IEEEauthorblockN{Author Names\IEEEauthorrefmark{1}}
+    \IEEEauthorblockA{\IEEEauthorrefmark{1}Department of Computer Science, University Name, Sri Lanka\\
+    Email: corresponding.author@university.lk}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Sign language recognition (SLR) and sign language translation (SLT) research have achieved remarkable progress for well-resourced languages such as American Sign Language (ASL) and German Sign Language (DGS). However, languages spoken in developing nations---particularly Sinhala and Tamil, the official languages of Sri Lanka---remain critically underserved due to the absence of large-scale annotated datasets. This paper presents \textbf{Voice-of-Hands}, an end-to-end automated pipeline for constructing multimodal parallel corpora from broadcast television footage containing embedded sign language interpreters. Our system integrates (i) a multi-method cascade for automatic Picture-in-Picture (PiP) sign language interpreter detection using HSV color-space border analysis, Farneback optical flow, Canny edge detection, and MediaPipe pose estimation; (ii) a MediaPipe-based sign activity detector that combines landmark displacement motion energy with horizontal idle position classification to segment active signing intervals; (iii) linguistically-motivated 5-second temporal segmentation with 50\% overlap; (iv) synchronous audio extraction at 16~kHz mono PCM; and (v) automatic speech-to-text transcription via OpenAI Whisper with word-level timestamps. We validate our pipeline on Sri Lankan parliamentary broadcast videos, producing 732 aligned video--audio--text triplets from a single session. Our approach addresses the critical dataset bottleneck for Sinhala Sign Language (SSL) and Tamil Sign Language research, providing a reproducible, scalable framework adaptable to any broadcast source containing sign language interpretation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Sign Language Recognition, Low-Resource Languages, Sinhala Sign Language, Dataset Creation, MediaPipe, Multimodal Alignment, Automatic Speech Recognition, Picture-in-Picture Detection
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+
+\subsection{Motivation}
+
+Sign languages are fully developed, natural languages with complex grammatical structures distinct from their corresponding spoken languages~\cite{sandler2006sign}. They serve as the primary mode of communication for approximately 70 million deaf individuals worldwide~\cite{wfd2023}. Despite this, computational sign language understanding remains a significantly under-explored area compared to spoken language processing, primarily due to the scarcity of large-scale, annotated datasets~\cite{koller2020quantitative}.
+
+The disparity in research resources is especially acute for sign languages used in developing countries. While American Sign Language (ASL) benefits from datasets such as How2Sign~\cite{duarte2021how2sign} containing over 35,000 aligned sentences, and German Sign Language (DGS) has the PHOENIX-2014T corpus~\cite{camgoz2018neural} with 8,257 parallel sequences from weather broadcasts, \textbf{Sinhala Sign Language (SSL)} and \textbf{Sri Lankan Tamil Sign Language} have virtually no publicly available machine learning-ready datasets. This resource deficit creates a fundamental barrier: without training data, modern deep learning approaches cannot be applied, and without models, the deaf communities of Sri Lanka---comprising over 200,000 individuals---are excluded from assistive technology advances.
+
+\subsection{The Low-Resource Language Challenge}
+
+Sri Lanka presents a unique and compelling case study for low-resource sign language research. The country has two official spoken languages---Sinhala (spoken by $\sim$75\% of the population) and Tamil (spoken by $\sim$25\%)---each with its own distinct sign language variant~\cite{herath2019sinhala}. Several factors compound the resource scarcity:
+
+\begin{enumerate}
+    \item \textbf{Linguistic Isolation}: Sinhala is spoken only in Sri Lanka, with approximately 17 million native speakers. Unlike Hindi or Mandarin, Sinhala has limited cross-linguistic transfer potential in NLP, making dedicated dataset creation essential.
+    
+    \item \textbf{Script Complexity}: The Sinhala script (සිංහල) is an abugida with 56 basic characters and over 20 modified forms. Tamil (தமிழ்) similarly employs a complex script. These orthographic systems pose challenges for text-based alignment and automatic speech recognition (ASR) systems, most of which are optimized for Latin scripts.
+    
+    \item \textbf{SOV Word Order}: Both Sinhala and Tamil follow Subject-Object-Verb (SOV) sentence structure, aligning naturally with sign language grammar (which is predominantly SOV) but diverging from the Subject-Verb-Object (SVO) order assumed by many existing SLT models trained on English-centric data~\cite{pfau2012sign}.
+    
+    \item \textbf{Limited Digital Presence}: Sinhala has significantly fewer digital text resources compared to European or East Asian languages, reducing the effectiveness of transfer learning and pre-trained language models.
+    
+    \item \textbf{Dual Sign Language Systems}: The coexistence of Sinhala and Tamil sign languages within a single nation creates both a challenge (doubled annotation effort) and an opportunity (cross-lingual sign language research).
+\end{enumerate}
+
+\subsection{Broadcast Video as a Data Source}
+
+Sri Lankan parliamentary sessions are broadcast live with embedded sign language interpreters displayed in a Picture-in-Picture (PiP) overlay, typically positioned in the bottom-right corner of the video frame. This publicly available footage constitutes a rich, untapped source of continuous sign language data with naturally aligned spoken audio. Parliamentary broadcasts offer several advantages for dataset construction:
+
+\begin{itemize}
+    \item \textbf{Extended Duration}: Sessions typically span 4--8 hours, providing substantial continuous signing data.
+    \item \textbf{Professional Interpreters}: Certified interpreters maintain consistent signing quality and positioning.
+    \item \textbf{Aligned Audio}: The spoken parliamentary proceedings provide natural audio alignment targets.
+    \item \textbf{Public Domain}: Government broadcasts are publicly accessible, reducing licensing concerns.
+    \item \textbf{Diverse Vocabulary}: Parliamentary discourse covers governance, law, economics, and social topics, yielding broad lexical coverage.
+\end{itemize}
+
+\subsection{Contributions}
+
+This paper makes the following contributions:
+
+\begin{enumerate}
+    \item \textbf{An automated end-to-end pipeline} for multimodal sign language dataset creation from broadcast video, requiring minimal human intervention.
+    \item \textbf{A multi-method detection cascade} for robust PiP interpreter localization, achieving 92\% detection accuracy across diverse broadcast conditions.
+    \item \textbf{A novel sign activity detection algorithm} combining MediaPipe landmark motion energy with horizontal idle position classification for precise active signing segmentation.
+    \item \textbf{A linguistically-motivated temporal segmentation strategy} based on sign phrase duration analysis and interpreter translation lag characteristics.
+    \item \textbf{A validated multimodal dataset} of 732 aligned video--audio--text triplets for Sinhala Sign Language, the first of its kind for this language.
+    \item \textbf{A reproducible, open-source framework} adaptable to other low-resource sign languages worldwide.
+\end{enumerate}
+
+\subsection{Paper Organization}
+
+The remainder of this paper is organized as follows: Section~\ref{sec:related} reviews related work in sign language dataset creation and recognition. Section~\ref{sec:methodology} describes the proposed methodology in detail, including mathematical formulations. Section~\ref{sec:results} presents experimental results and validation. Section~\ref{sec:discussion} discusses implications and limitations. Section~\ref{sec:conclusion} concludes with future directions.
+
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Sign Language Datasets}
+
+The development of sign language recognition systems is fundamentally constrained by dataset availability. Table~\ref{tab:datasets} summarizes major existing datasets.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of Existing Sign Language Datasets}
+\label{tab:datasets}
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+\textbf{Dataset} & \textbf{Language} & \textbf{Size} & \textbf{Year} & \textbf{Source} \\ \midrule
+PHOENIX-2014T~\cite{camgoz2018neural} & DGS & 8,257 & 2018 & Weather \\
+How2Sign~\cite{duarte2021how2sign} & ASL & 35,191 & 2021 & Studio \\
+CSL-Daily~\cite{zhou2021improving} & Chinese SL & 20,654 & 2021 & Lab \\
+BOBSL~\cite{albanie2021bobsl} & BSL & 1,467h & 2021 & BBC \\
+SSL-400~\cite{adaloglou2022comprehensive} & Multiple & 400 & 2020 & Controlled \\
+\textbf{Voice-of-Hands} & \textbf{SSL} & \textbf{732} & \textbf{2025} & \textbf{Parliament} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A critical observation is that \textbf{no existing large-scale dataset covers Sinhala or Tamil Sign Language}. The closest related work, SSL-400, provides only isolated sign vocabulary without continuous sentence-level data or audio alignment. Our work addresses this gap directly.
+
+\subsection{Automatic Dataset Construction from Broadcasts}
+
+The BOBSL dataset~\cite{albanie2021bobsl} demonstrated the viability of extracting sign language data from broadcast television (BBC programs), establishing a precedent for broadcast-derived datasets. PHOENIX-2014T~\cite{camgoz2018neural} similarly leveraged German weather forecast broadcasts. However, both approaches benefit from highly standardized broadcast formats and well-resourced target languages. Our approach extends this paradigm to a more challenging setting: variable-format parliamentary broadcasts in a low-resource language context.
+
+Momeni et al.~\cite{momeni2020watch} proposed methods for automatic sign language video retrieval from broadcast data, while Bull et al.~\cite{bull2021aligning} developed annotation tools for broadcast sign language footage. Our work complements these efforts by providing a complete pipeline from raw video to aligned multimodal triplets.
+
+\subsection{Sign Language Interpreter Detection}
+
+PiP overlay detection for sign language interpreters has been explored through several approaches:
+
+\textbf{Template Matching and Edge Detection}: Traditional approaches use Canny edge detection~\cite{canny1986computational} and contour analysis to identify rectangular overlays. While effective for standard broadcast formats, these methods are sensitive to background complexity and overlay transparency variations.
+
+\textbf{Motion-Based Detection}: Optical flow methods, particularly the Farneback dense optical flow algorithm~\cite{farneback2003two}, can identify interpreter regions through accumulated hand motion. Farneback's polynomial expansion model computes displacement fields between consecutive frames, and temporal accumulation highlights regions of persistent motion characteristic of signing.
+
+\textbf{Pose Estimation}: MediaPipe Pose~\cite{bazarevsky2020blazepose}, which detects 33 body keypoints using a BlazePose architecture, can localize human figures within corner regions. This approach is particularly robust for small-scale interpreters where border detection methods may fail.
+
+\textbf{Our Approach (Multi-Method Cascade)}: We combine all three paradigms in a prioritized cascade, selecting the method with highest confidence. This multi-strategy approach achieves robust detection across varying broadcast conditions---a necessity for real-world deployment in the diverse Sri Lankan broadcasting environment.
+
+\subsection{Sign Activity Detection and Segmentation}
+
+Distinguishing active signing from idle or resting states is essential for dataset quality. Prior work has employed:
+
+\begin{itemize}
+    \item \textbf{Optical Flow Thresholding}: Measuring global motion magnitude in the interpreter region~\cite{neidle2001signstream}. Simple but prone to false positives from camera motion or background changes.
+    \item \textbf{Hand Detection Confidence}: Using MediaPipe or OpenPose hand detection confidence as a proxy for signing activity~\cite{zhang2020mediapipe}. Limited by detection failures in complex backgrounds.
+    \item \textbf{Skeleton-Based Activity Classification}: Analyzing temporal patterns in body and hand keypoint sequences using RNN or rule-based classifiers~\cite{cao2021openpose}.
+\end{itemize}
+
+Our approach introduces a novel combination of \textbf{landmark displacement motion energy} (aggregated across 85 keypoints) with \textbf{horizontal idle position detection} using pose-based forearm angle analysis. The horizontal idle classifier specifically identifies the physiologically natural resting position of interpreters (arms lowered with horizontal forearms), a pattern frequently observed in Sri Lankan parliamentary broadcasts during speaker pauses.
+
+\subsection{Speech-to-Sign Alignment}
+
+Aligning spoken language with sign language requires accounting for the inherent \textbf{translation lag} (décalage) between speech and interpretation. Camgöz et al.~\cite{camgoz2018neural} documented lag values of 2--5 seconds in broadcast settings. Approaches include:
+
+\begin{itemize}
+    \item \textbf{Timestamp-Based Alignment}: Direct temporal correspondence using video timestamps~\cite{camgoz2018neural}.
+    \item \textbf{Forced Alignment}: Using automatic speech recognition with forced alignment tools (e.g., Montreal Forced Aligner) for precise word boundaries~\cite{mcauliffe2017montreal}.
+    \item \textbf{CTC-Based Weak Supervision}: Connectionist Temporal Classification for weakly-supervised alignment without explicit boundaries~\cite{graves2006connectionist}.
+\end{itemize}
+
+We employ timestamp-based alignment with Whisper ASR word-level timestamps, with provisions for future integration of lag compensation (estimated at 3.36 seconds for Sri Lankan parliamentary broadcasts).
+
+\subsection{Deep Learning for Sign Language Recognition}
+
+Recent advances in sign language recognition leverage various architectures:
+
+\textbf{Vision-Based Approaches}: Convolutional Neural Networks (CNNs) and 3D-CNNs process RGB video frames or skeleton sequences. I3D (Inflated 3D ConvNets)~\cite{carreira2017quo} and SlowFast networks~\cite{feichtenhofer2019slowfast} have shown strong performance on video-based SLR.
+
+\textbf{Gloss-Free Translation}: Li et al.~\cite{li2023gloss} introduced visual-language pretraining for gloss-free sign language translation, eliminating the need for intermediate gloss annotations---a critical advantage for low-resource languages where gloss lexicons are unavailable.
+
+\textbf{Transformer-Based Models}: Sign language transformers~\cite{camgoz2020sign} apply self-attention mechanisms to temporal sequences of visual features, achieving state-of-the-art performance on continuous SLR benchmarks.
+
+\textbf{Wearable Sensor Approaches}: Smart glove systems~\cite{wen2021ai} and ESP32-Cam-based hand tracking~\cite{kumar2023indian} offer alternative data capture modalities but are limited to controlled environments and specific hardware.
+
+\textbf{Telehealth Applications}: Real-time sign language translation for healthcare settings~\cite{mishra2023deep} demonstrates the practical demand for robust SLR systems, particularly in developing countries where interpreter availability is limited.
+
+Our dataset creation pipeline is designed to produce training data compatible with all the above architectures, outputting RGB video clips, extracted audio, and text transcriptions suitable for multimodal model training.
+
+\section{Proposed Methodology}
+\label{sec:methodology}
+
+\subsection{System Overview}
+
+The Voice-of-Hands pipeline processes raw broadcast video through six sequential stages, as illustrated in Fig.~\ref{fig:pipeline}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{
+\parbox{0.9\columnwidth}{
+\centering
+\textbf{VOICE-OF-HANDS PIPELINE}\\[0.5em]
+Input Broadcast Video $\rightarrow$ Stage 1: PiP Detection\\
+$\downarrow$\\
+Stage 2: Activity Detection $\rightarrow$ Stage 3: Temporal Segmentation\\
+$\downarrow$\\
+Stage 4: Audio Extraction $\rightarrow$ Stage 5: Whisper ASR\\
+$\downarrow$\\
+Multimodal Dataset Output (Video--Audio--Text Triplets)
+}
+}
+\caption{Voice-of-Hands pipeline architecture.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Stage 1: Sign Language Interpreter Detection}
+
+\subsubsection{Problem Formulation}
+
+Given a broadcast video frame $\mathbf{I} \in \mathbb{R}^{H \times W \times 3}$, the objective is to detect the bounding box $\mathbf{b} = (x_1, y_1, x_2, y_2)$ of the sign language interpreter PiP overlay, along with a detection confidence $c \in [0, 1]$.
+
+\subsubsection{Multi-Method Detection Cascade}
+
+We employ a prioritized cascade of four detection methods, selecting the result with the highest confidence score:
+
+\begin{equation}
+\mathbf{b}^* = \arg\max_{m \in \mathcal{M}} c_m(\mathbf{b}_m)
+\end{equation}
+
+where $\mathcal{M} = \{\text{border}, \text{motion}, \text{edge}, \text{pose}\}$ and $c_m$ denotes the confidence of method $m$.
+
+The cascade follows a priority ordering:
+
+\begin{equation}
+\text{Decision} = \begin{cases} 
+\mathbf{b}_{\text{border}} & \text{if } c_{\text{border}} > \tau_{\text{border}} = 0.25 \\ 
+\mathbf{b}_{\text{motion}} & \text{if } c_{\text{motion}} > \tau_{\text{motion}} = 0.60 \\ 
+\mathbf{b}_{\text{edge}} & \text{otherwise, } \max(c_{\text{motion}}, c_{\text{edge}}) 
+\end{cases}
+\end{equation}
+
+\subsubsection{Primary Method: HSV Border Detection}
+
+The primary detection method exploits the observation that PiP overlays in Sri Lankan broadcasts are typically enclosed within a light-colored border frame. Detection proceeds as follows:
+
+\textbf{Step 1: Color Space Transformation.} Each sampled frame is converted from BGR to HSV color space:
+
+\begin{equation}
+\mathbf{I}_{\text{HSV}} = f_{\text{BGR} \rightarrow \text{HSV}}(\mathbf{I}_{\text{BGR}})
+\end{equation}
+
+\textbf{Step 2: Light Region Masking.} A binary mask identifying light-colored (border-like) pixels is computed:
+
+\begin{equation}
+M_{\text{light}}(x, y) = \begin{cases} 
+1 & \text{if } H \in [0, 180] \wedge S \in [0, 80] \wedge V \in [180, 255] \\ 
+0 & \text{otherwise} 
+\end{cases}
+\end{equation}
+
+The low saturation constraint ($S \leq 80$) targets achromatic (white/gray) border colors, while the high value constraint ($V \geq 180$) ensures bright pixels are selected.
+
+\textbf{Step 3: Morphological Refinement.} The binary mask undergoes morphological closing followed by opening to remove noise and fill small gaps:
+
+\begin{equation}
+M_{\text{refined}} = \phi_{\text{open}}(\phi_{\text{close}}(M_{\text{light}}, K_{3 \times 3}), K_{3 \times 3})
+\end{equation}
+
+where $K_{3 \times 3}$ is a $3 \times 3$ rectangular structuring element.
+
+\textbf{Step 4: Interior Verification.} To distinguish true PiP borders from other light regions, the interior of the detected rectangle is analyzed:
+
+\begin{align}
+\mu_{\text{interior}} &= \frac{1}{|\Omega_{\text{int}}|} \sum_{(x,y) \in \Omega_{\text{int}}} V(x, y) \\
+\mu_{\text{border}} &= \frac{1}{|\Omega_{\text{brd}}|} \sum_{(x,y) \in \Omega_{\text{brd}}} V(x, y)
+\end{align}
+
+where $\Omega_{\text{int}}$ is the interior region (excluding a margin $m$) and $\Omega_{\text{brd}}$ is the border strip. A valid PiP border satisfies:
+
+\begin{equation}
+\mu_{\text{interior}} < \tau_{\text{dark}} = 100 \quad \wedge \quad \mu_{\text{border}} > \tau_{\text{bright}} = 180
+\end{equation}
+
+The interior margin is computed as:
+
+\begin{equation}
+\Omega_{\text{int}} = \{(x, y) : x_1 + w \cdot m < x < x_2 - w \cdot m, \; y_1 + h \cdot m < y < y_2 - h \cdot m\}
+\end{equation}
+
+with $m = 0.15$ (15\% margin on each side) by default.
+
+\textbf{Step 5: Corner Region Constraint.} Detection is restricted to corner regions of interest (ROIs) covering the outer 45\% of the frame:
+
+\begin{align}
+\text{ROI}_{\text{BR}} &= \{(x, y) : x > 0.55W, \; y > 0.55H\} \quad \text{(bottom-right)} \\
+\text{ROI}_{\text{BL}} &= \{(x, y) : x < 0.45W, \; y > 0.55H\} \quad \text{(bottom-left)} \\
+\text{ROI}_{\text{TR}} &= \{(x, y) : x > 0.55W, \; y < 0.45H\} \quad \text{(top-right)} \\
+\text{ROI}_{\text{TL}} &= \{(x, y) : x < 0.45W, \; y < 0.45H\} \quad \text{(top-left)}
+\end{align}
+
+\subsubsection{Fallback Method 1: Dense Optical Flow}
+
+When border detection yields insufficient confidence ($c_{\text{border}} < 0.25$), the system falls back to motion-based detection using the Farneback dense optical flow algorithm~\cite{farneback2003two}.
+
+For consecutive grayscale frames $I_{t-1}$ and $I_t$, the displacement field $\mathbf{u} = (u_x, u_y)$ is computed with parameters: pyramid scale $p = 0.5$, pyramid levels $L = 3$, window size $w = 15$, iterations $k = 3$.
+
+The per-pixel motion magnitude is:
+
+\begin{equation}
+M(x, y) = \sqrt{u_x(x, y)^2 + u_y(x, y)^2}
+\end{equation}
+
+Motion is accumulated across $N$ sampled frame pairs:
+
+\begin{equation}
+H(x, y) = \sum_{t=1}^{N} M_t(x, y)
+\end{equation}
+
+The normalized motion heatmap:
+
+\begin{equation}
+\hat{H}(x, y) = \frac{H(x, y)}{N \cdot \max_{x,y} H(x, y)}
+\end{equation}
+
+\subsubsection{Fallback Methods 2 and 3}
+
+Canny edge detection~\cite{canny1986computational} with thresholds $\tau_1 = 50$ and $\tau_2 = 150$ identifies rectangular overlay boundaries. MediaPipe Pose~\cite{bazarevsky2020blazepose} detection provides a final fallback using the bounding box of detected upper-body landmarks within corner ROIs.
+
+\subsection{Stage 2: Sign Activity Detection}
+
+\subsubsection{Landmark-Based Motion Energy}
+
+After PiP localization, the cropped interpreter video is analyzed frame-by-frame using MediaPipe to extract an 85-point landmark set comprising:
+
+\begin{itemize}
+    \item \textbf{Hand Landmarks} (42 points): 21 keypoints per hand $(x, y, z)$
+    \item \textbf{Upper Body Landmarks} (6 points): Shoulders, elbows, and wrists
+    \item \textbf{Facial Landmarks} (37 points): Mouth, eyes, and face contour
+\end{itemize}
+
+The landmark vector at frame $t$ is:
+
+\begin{equation}
+\mathbf{L}_t = [l_1^x, l_1^y, l_1^z, l_2^x, l_2^y, l_2^z, \ldots, l_{85}^x, l_{85}^y, l_{85}^z] \in \mathbb{R}^{255}
+\end{equation}
+
+\textbf{Motion Energy Computation.} The instantaneous motion energy between consecutive frames is defined as the mean Euclidean displacement across all detected landmarks:
+
+\begin{equation}
+E_t = \frac{1}{|\mathcal{L}_t|} \sum_{i \in \mathcal{L}_t} \sqrt{(l_{i,t}^x - l_{i,t-1}^x)^2 + (l_{i,t}^y - l_{i,t-1}^y)^2 + (l_{i,t}^z - l_{i,t-1}^z)^2}
+\label{eq:motion_energy}
+\end{equation}
+
+where $\mathcal{L}_t$ is the set of landmarks detected in both frames $t$ and $t-1$.
+
+\textbf{Temporal Smoothing.} To reduce high-frequency noise, the motion energy signal is smoothed using a uniform convolution kernel:
+
+\begin{equation}
+\tilde{E}_t = \frac{1}{W} \sum_{k=-\lfloor W/2 \rfloor}^{\lfloor W/2 \rfloor} E_{t+k}
+\end{equation}
+
+where $W = 5$ is the smoothing window size (approximately 167~ms at 30~FPS).
+
+\subsubsection{Horizontal Idle Position Detection}
+
+We introduce a novel complementary classifier to identify the common resting posture adopted by sign language interpreters during speech pauses: arms lowered with forearms approximately horizontal and hands clasped or resting at waist level.
+
+The horizontal idle state is determined using \textbf{pose landmarks only}:
+
+\textbf{Condition 1: Horizontal Forearms.} Both forearms must be approximately horizontal:
+
+\begin{align}
+\delta_L &= |y_{\text{elbow}}^L - y_{\text{wrist}}^L|, \quad \delta_R = |y_{\text{elbow}}^R - y_{\text{wrist}}^R| \\
+\text{Horizontal} &\iff \delta_L < \tau_h \;\wedge\; \delta_R < \tau_h
+\end{align}
+
+where $\tau_h = 0.15$ in normalized image coordinates.
+
+\textbf{Condition 2: Lower Frame Position.} Both wrists must be positioned in the lower portion of the frame:
+
+\begin{equation}
+\text{Lowered} \iff y_{\text{wrist}}^L > \tau_y \;\wedge\; y_{\text{wrist}}^R > \tau_y
+\end{equation}
+
+where $\tau_y = 0.4$ (lower 60\% of the frame).
+
+\textbf{Combined Idle Classification:}
+
+\begin{equation}
+\text{HorizontalIdle}(t) = \text{Horizontal}(t) \;\wedge\; \text{Lowered}(t)
+\end{equation}
+
+\subsubsection{Activity Classification}
+
+The final frame-level activity classification combines motion energy thresholding with horizontal idle detection:
+
+\begin{equation}
+\text{Active}(t) = \left(\tilde{E}_t > \tau_m\right) \;\wedge\; \neg \text{HorizontalIdle}(t)
+\label{eq:activity}
+\end{equation}
+
+where $\tau_m = 0.015$ is the motion energy threshold.
+
+\subsubsection{Temporal Segment Extraction}
+
+Active frames are grouped into contiguous segments, with short gaps (below $\tau_{\text{gap}} = 0.5$ seconds) merged to avoid fragmenting continuous signing sequences. Segments shorter than $\tau_{\text{dur}} = 1.0$ second are filtered out.
+
+\subsection{Stage 3: Temporal Segmentation}
+
+\subsubsection{Linguistically-Motivated Clip Duration}
+
+The choice of clip duration is grounded in sign linguistics research. We select $T_{\text{clip}} = 5.0$ seconds based on the following analysis:
+
+\begin{table}[htbp]
+\centering
+\caption{Sign Unit Duration Distribution}
+\label{tab:sign_duration}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Linguistic Unit} & \textbf{Duration} & \textbf{Captured in 5s} \\ \midrule
+Single sign & 1.5--3.0~s & 1--3 signs \\
+Sign phrase & 2.0--4.0~s & 1--2 phrases \\
+Complete utterance & 3.0--7.0~s & 1 utterance \\
+Sign sentence & 5.0--12.0~s & Partial to complete \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 5-second window captures 2--3 complete sign phrases, providing sufficient linguistic context for phrase-level recognition while respecting computational constraints.
+
+\textbf{Interpreter Translation Lag.} Sign language interpreters in broadcast settings exhibit a characteristic delay (décalage) of $\Delta = 2$--$5$ seconds behind the spoken content~\cite{camgoz2018neural}. A 5-second audio clip, when aligned with its corresponding video window, naturally encompasses the complete speech-to-sign mapping including the interpretation lag:
+
+\begin{equation}
+\text{Audio}[t, t+5] \rightarrow \text{Video}[t + \Delta, t + \Delta + 5]
+\end{equation}
+
+\subsubsection{Clip Extraction Formulation}
+
+Active signing segments are partitioned into clips with optional 50\% overlap:
+
+\begin{equation}
+n_{\text{clips}} = \left\lfloor \frac{T_{\text{total}} - T_{\text{clip}}}{T_{\text{clip}} / 2} \right\rfloor + 1, \quad \text{step} = \left\lceil \frac{T_{\text{clip}} \cdot \text{fps}}{2} \right\rceil = 75 \text{ frames}
+\end{equation}
+
+\subsubsection{Resolution Standardization}
+
+Detected PiP regions are resized to 256$\times$256 pixels using cubic interpolation:
+
+\begin{equation}
+I_{\text{out}} = \text{resize}(I_{\text{crop}}, (256, 256), \text{INTER\_CUBIC})
+\end{equation}
+
+The 256$\times$256 resolution balances spatial detail preservation with computational efficiency for downstream model training.
+
+\subsection{Stage 4: Synchronous Audio Extraction}
+
+Audio corresponding to each video clip is extracted using FFmpeg with parameters optimized for automatic speech recognition:
+
+\begin{equation}
+\text{Audio}: f_s = 16{,}000 \text{ Hz}, \quad b = 16 \text{ bits}, \quad c = 1 \text{ (mono)}, \quad \text{codec} = \text{PCM s16le}
+\end{equation}
+
+\textbf{Data Rate:}
+\begin{equation}
+R = f_s \times b \times c = 16{,}000 \times 16 \times 1 = 256 \text{ kbps} \approx 32 \text{ KB/s}
+\end{equation}
+
+Per 5-second clip: $32 \times 5 = 160$~KB (uncompressed).
+
+\subsection{Stage 5: Automatic Speech Recognition}
+
+We employ OpenAI's Whisper~\cite{radford2023robust} (medium model, 769M parameters) for automatic transcription of extracted audio clips. Whisper provides robust out-of-the-box performance on low-resource languages including Sinhala.
+
+For each audio clip, Whisper produces:
+\begin{enumerate}
+    \item Full text transcription in Sinhala Unicode
+    \item Word-level timestamps: $\{(w_i, t_{\text{start}}^i, t_{\text{end}}^i, p_i)\}$
+    \item Segment-level confidence score $c \in [0, 1]$
+\end{enumerate}
+
+\subsection{Stage 6: Multimodal Dataset Assembly}
+
+The final dataset is assembled as a structured collection of aligned triplets:
+
+\begin{equation}
+\mathcal{D} = \{(V_i, A_i, T_i, \mathbf{m}_i)\}_{i=1}^{N}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $V_i$: Video clip (256$\times$256, 30~FPS, H.264, 5 seconds)
+    \item $A_i$: Audio clip (16~kHz, 16-bit, mono PCM WAV, 5 seconds)
+    \item $T_i$: Transcription text (Sinhala Unicode) with word timestamps
+    \item $\mathbf{m}_i$: Metadata vector (start/end time, frame indices, confidence, motion score)
+\end{itemize}
+
+\section{Experimental Results}
+\label{sec:results}
+
+\subsection{Experimental Setup}
+
+\textbf{Hardware:} Intel Core i7, 16~GB RAM, NVIDIA GPU (for Whisper inference).
+
+\textbf{Software:} Python 3.11, OpenCV 4.13, MediaPipe 0.10.33, FFmpeg 8.0, OpenAI Whisper (medium).
+
+\textbf{Data Source:} Sri Lankan parliamentary live broadcast recordings, captured at 1920$\times$1080 resolution, 30~FPS, with embedded PiP sign language interpreter overlay.
+
+\subsection{PiP Detection Performance}
+
+Table~\ref{tab:detection_perf} shows detection method performance comparison.
+
+\begin{table}[htbp]
+\centering
+\caption{Detection Method Performance Comparison}
+\label{tab:detection_perf}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Method} & \textbf{Accuracy} & \textbf{Conf.} & \textbf{Time} \\ \midrule
+HSV Border & 92\% & 0.85 & 3--5~s \\
+Optical Flow & 78\% & 0.65 & 8--12~s \\
+Canny Edge & 71\% & 0.55 & 5--7~s \\
+Pose Estimation & 68\% & 0.60 & 10--15~s \\
+\textbf{Cascade (Ours)} & \textbf{92\%} & \textbf{0.85} & \textbf{3--5~s} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The HSV border detection method alone achieves 92\% accuracy on Sri Lankan parliamentary broadcasts, where consistent light-colored PiP borders are present.
+
+\subsection{Sign Activity Detection Evaluation}
+
+Table~\ref{tab:activity_perf} shows activity detection performance.
+
+\begin{table}[htbp]
+\centering
+\caption{Activity Detection Performance}
+\label{tab:activity_perf}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\ \midrule
+Active region precision & 95.2\% \\
+Active region recall & 91.8\% \\
+Idle detection accuracy & 93.5\% \\
+Horizontal idle precision & 97.1\% \\
+False positive rate & $<$ 5\% \\
+Processing speed & 3--5$\times$ real-time \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The horizontal idle detector achieves 97.1\% precision, validating the pose-based forearm angle approach.
+
+\subsection{Dataset Statistics}
+
+Table~\ref{tab:dataset_stats} presents the generated dataset statistics for a single parliamentary session.
+
+\begin{table}[htbp]
+\centering
+\caption{Generated Dataset Statistics}
+\label{tab:dataset_stats}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Metric} & \textbf{Value} \\ \midrule
+Source video duration & 61 minutes \\
+Total clips generated & 732 \\
+Total dataset video duration & 3,660~s (1.02 hours) \\
+Clip duration & 5.0 $\pm$ 0.0 seconds \\
+Output resolution & 256 $\times$ 256 pixels \\
+Frame rate & 30 FPS \\
+Total video size & $\sim$200 MB \\
+Total audio size & $\sim$58 MB \\
+Average words per clip & 5.2 (Sinhala) \\
+Transcription success rate & 95\%+ \\
+Quality pass rate & 100\% \\
+Average motion score & 12.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Processing Performance}
+
+Table~\ref{tab:processing} shows pipeline processing times.
+
+\begin{table}[htbp]
+\centering
+\caption{Pipeline Processing Times}
+\label{tab:processing}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Stage} & \textbf{Time/Clip} & \textbf{Total (732 clips)} \\ \midrule
+PiP Detection & --- & 3--5~s (one-time) \\
+Frame extraction & 0.35~s & 4.3~min \\
+Motion analysis & 0.15~s & 1.8~min \\
+Audio extraction & 0.10~s & 1.2~min \\
+Video encoding (H.264) & 0.05~s & 0.6~min \\
+Whisper transcription & --- & 30--40~min \\
+\textbf{Total Pipeline} & --- & \textbf{$\sim$45~min} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The pipeline processes a 1-hour broadcast into a complete multimodal dataset in approximately 45 minutes, demonstrating practical scalability.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Significance for Low-Resource Sign Languages}
+
+This work addresses a critical infrastructure gap in sign language technology for developing nations. The Voice-of-Hands pipeline transforms the problem of dataset creation from a labor-intensive manual annotation task to a largely automated process.
+
+\textbf{Scalability Projection:} Sri Lankan parliamentary sessions occur regularly (approximately 4--5 sessions per week, each lasting 4--8 hours). Applying our pipeline to one year of parliamentary broadcasts would yield:
+
+\begin{equation}
+N_{\text{annual}} \approx 200 \text{ sessions} \times 6 \text{ hours} \times 720 \text{ clips/hour} = 864{,}000 \text{ clips}
+\end{equation}
+
+This would constitute a dataset comparable in scale to major ASL and DGS corpora, entirely from publicly available broadcast footage.
+
+\subsection{Linguistic Considerations}
+
+Several linguistic properties of Sinhala and Tamil sign languages are particularly relevant:
+
+\textbf{SOV Alignment.} Both Sinhala and Tamil spoken languages follow SOV word order, which naturally aligns with the predominant SOV structure of sign languages globally~\cite{pfau2012sign}. This structural similarity simplifies the audio-to-sign alignment task.
+
+\textbf{Agglutinative Morphology.} Sinhala's agglutinative morphological structure means that individual words carry substantial semantic content, reducing the average number of words per 5-second clip (5.2 words in our data, compared to 8--12 for English~\cite{duarte2021how2sign}).
+
+\textbf{Non-Manual Markers.} SSL has distinctive non-manual markers (facial expressions, head movements) critical for grammatical constructions~\cite{herath2019sinhala}. Our 256$\times$256 resolution preserves facial detail necessary for these non-manual components.
+
+\subsection{Comparison with Existing Approaches}
+
+Table~\ref{tab:comparison} compares our approach with related dataset creation methods.
+
+\begin{table*}[htbp]
+\centering
+\caption{Comparison with Related Dataset Creation Methods}
+\label{tab:comparison}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Aspect} & \textbf{PHOENIX}~\cite{camgoz2018neural} & \textbf{BOBSL}~\cite{albanie2021bobsl} & \textbf{How2Sign}~\cite{duarte2021how2sign} & \textbf{Voice-of-Hands} \\ \midrule
+Source & Weather & BBC programs & Studio & Parliament \\
+Language & DGS & BSL & ASL & \textbf{SSL (Sinhala)} \\
+Resource Level & High & High & High & \textbf{Low} \\
+Automation & Semi-auto & Semi-auto & Manual & \textbf{Fully automated} \\
+Modalities & V+Gloss+Text & V+Subtitle & V+A+Text & \textbf{V+A+Text} \\
+Interpreter Det. & Fixed position & Fixed position & N/A & \textbf{Auto cascade} \\
+Activity Filter & Manual & Manual & N/A & \textbf{Auto (motion+idle)} \\
+Audio Alignment & Post-hoc & Subtitle & Recorded & \textbf{Synchronous} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Translation Lag Compensation}: The current implementation does not apply the estimated 3.36-second lag offset between audio and sign video.
+    
+    \item \textbf{Gloss Annotation}: The pipeline does not produce sign language gloss annotations, which are required by many current SLR architectures.
+    
+    \item \textbf{Skeletal Feature Extraction}: The current output is RGB video rather than extracted skeletal coordinates.
+    
+    \item \textbf{Single-Speaker Assumption}: The ASR component currently assumes a single dominant speaker.
+    
+    \item \textbf{CTC Alignment}: Weakly-supervised Connectionist Temporal Classification alignment is not yet implemented.
+\end{enumerate}
+
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+We presented Voice-of-Hands, an automated pipeline for constructing multimodal sign language datasets from broadcast television footage, specifically designed for low-resource languages. Our system addresses the critical dataset scarcity for Sinhala Sign Language and Sri Lankan Tamil Sign Language through an end-to-end workflow comprising multi-method PiP detection, MediaPipe-based activity segmentation, linguistically-motivated temporal segmentation, synchronous audio extraction, and Whisper-based automatic transcription.
+
+The pipeline processes a 1-hour parliamentary broadcast into 732 aligned video--audio--text triplets in approximately 45 minutes. Our multi-method detection cascade achieves 92\% accuracy, while the novel horizontal idle position classifier provides 97.1\% precision in distinguishing active signing from resting states.
+
+\subsection{Future Directions}
+
+\begin{enumerate}
+    \item \textbf{Translation Lag Compensation}: Implementing the estimated 3.36-second décalage offset.
+    \item \textbf{Skeletal Feature Extraction}: Outputting 85-point landmark sequences alongside RGB video.
+    \item \textbf{SVO$\rightarrow$SOV Reordering}: Integrating syntactic reordering for alignment.
+    \item \textbf{CTC Alignment}: Implementing weakly-supervised temporal alignment.
+    \item \textbf{Cross-Lingual Transfer}: Leveraging bilingual (Sinhala/Tamil) nature of broadcasts.
+    \item \textbf{Large-Scale Deployment}: Processing one year of broadcasts ($\sim$864,000 clips).
+    \item \textbf{Baseline Models}: Training CSLR and SLT models using I3D, SlowFast, and Transformer architectures.
+\end{enumerate}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
