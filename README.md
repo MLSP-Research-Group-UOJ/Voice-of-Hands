@@ -1,300 +1,302 @@
-# Voice-of-Hands: Sign Language Interpreter (SLI) Video Cropping System
+# Voice-of-Hands: Multimodal Sign Language Dataset Collection System
 
-**Date**: February 27, 2026  
-**Purpose**: Automatically detect and crop sign language interpreter regions from broadcast videos with audio preservation
+**Last Updated**: May 5, 2026  
+**Purpose**: Automatically detect and crop sign language interpreter regions from broadcast news videos, extract active signing clips, transcribe aligned audio, and build a multimodal dataset for sign language research.
 
 ---
 
-## Quick Start
+## Table of Contents
 
-### Basic Usage
+1. [Project Overview](#project-overview)
+2. [Project Structure](#project-structure)
+3. [Installation](#installation)
+4. [Pipeline: How to Run](#pipeline-how-to-run)
+   - [Step 1 – Crop Interpreter Region](#step-1--crop-interpreter-region)
+   - [Step 2 – Detect Active Signing Clips](#step-2--detect-active-signing-clips)
+   - [Step 3 – Extract Audio & Transcribe](#step-3--extract-audio--transcribe)
+   - [Step 4 – Generate Visualization (demo7.mp4)](#step-4--generate-visualization-demo7mp4)
+5. [Command Reference](#command-reference)
+6. [Output Structure](#output-structure)
+
+---
+
+## Project Overview
+
+This system processes broadcast news videos containing a sign language interpreter in a bordered inset window. It:
+
+1. **Detects and crops** the interpreter region using border detection
+2. **Extracts 5-second clips** from the cropped video
+3. **Detects active signing** vs idle periods using MediaPipe pose/hand landmarks
+4. **Extracts aligned audio** for each active clip
+5. **Transcribes Sinhala speech** using OpenAI Whisper with word-level timestamps
+6. **Builds a multimodal dataset** with aligned video, audio, and text
+
+---
+
+## Project Structure
+
+```
+Voice-of-Hands/
+│
+├── src/                               # All source code
+│   ├── detection/
+│   │   ├── sli_detector.py            # SLI border region detector (OpenCV)
+│   │   ├── sign_activity_detector.py  # MediaPipe-based active signing detector
+│   │   └── diagnose_rest_detection.py # Diagnostic tool for rest/idle tuning
+│   │
+│   ├── dataset/
+│   │   ├── dataset_utils.py           # Dataset creation and analysis utilities
+│   │   ├── scrapper.py                # Video downloader / scraper
+│   │   ├── timestamp_extractor.py     # Clip extraction with timestamps
+│   │   ├── run_audio_extraction.py    # Audio extraction pipeline runner
+│   │   ├── run_transcription.py       # Whisper transcription pipeline runner
+│   │   └── fix_audio_only_clips.py    # Fix clips that contain only audio
+│   │
+│   └── utils/
+│       ├── quick_start.py             # One-command pipeline entry point
+│       ├── crop_video_by_time.py      # Crop video by time range
+│       ├── crop_video_spatial.py      # Spatial crop utility
+│       ├── convert_to_pdf.py          # Convert docs to PDF
+│       ├── md_to_pdf.py               # Markdown to PDF converter
+│       └── setup.sh                   # Environment setup script
+│
+├── data/
+│   ├── videos/                        # Input source videos (demo*.mp4, raw footage)
+│   └── multimodal_dataset/            # Final aligned multimodal dataset
+│       ├── alignment_metadata.json    # Audio-video-text alignment metadata
+│       ├── audio_clips/               # Extracted audio per clip
+│       ├── video_clips/               # Extracted video clips
+│       └── transcriptions/            # Whisper transcription text files
+│
+├── outputs/
+│   ├── active_clips/
+│   │   ├── clips/                     # Active signing clips (MediaPipe output)
+│   │   ├── clips_fixed/               # Fixed clips (audio-corrected)
+│   │   ├── clips_viz/                 # Visualization overlay clips
+│   │   └── clips_with_audio/          # Active clips with synchronized audio
+│   ├── detection_results/             # Detector output runs (results, results3–7)
+│   ├── signer_dataset/                # Cropped signer dataset outputs
+│   └── transcription_log.txt          # Whisper transcription run log
+│
+├── docs/
+│   ├── guides/                        # Usage guides and quickstart docs
+│   │   ├── HOW_TO_RUN.md
+│   │   ├── SIGN_ACTIVITY_DETECTOR_USAGE.md
+│   │   ├── IMPROVED_DETECTION_QUICKSTART.md
+│   │   └── AUDIO_ALIGNMENT_QUICKSTART.md
+│   ├── methodology/                   # Algorithm and strategy documentation
+│   │   ├── 5-Second_Clip_Duration_Strategy.md
+│   │   ├── AUDIO_SIGN_ALIGNMENT_METHODOLOGY.md
+│   │   ├── HORIZONTAL_IDLE_DETECTION.md
+│   │   └── SIMPLIFIED_REST_DETECTION.txt
+│   ├── diagrams/                      # Flowcharts and layout diagrams
+│   │   ├── flowchart.mmd / .html
+│   │   ├── SLI_Detection_Process_Flowchart.pdf
+│   │   ├── VISUALIZATION_LAYOUT.txt
+│   │   └── HORIZONTAL_DETECTION_DIAGRAM.txt
+│   ├── analysis/                      # Planning and analysis documents
+│   │   ├── Implementation_vs_Specification_Analysis.md
+│   │   ├── PENDING_TASKS.md
+│   │   ├── PROJECT_DEVELOPMENT_TIMELINE.md
+│   │   └── PROCESS_FLOWCHART_AND_TECHNOLOGIES.md
+│   ├── journal_paper/                 # IEEE journal paper (LaTeX)
+│   │   ├── voice_of_hands_paper.tex
+│   │   ├── references.bib
+│   │   ├── JOURNAL_PAPER_DRAFT.md
+│   │   └── compile.sh
+│   ├── research/                      # Literature review and research docs
+│   │   ├── LITERATURE_REWIEW/
+│   │   └── research_docs/
+│   └── presentation/                  # Slides and Q&A documents
+│
+├── experiments/                       # Test runs and parameter experiments (test_*)
+├── Dataset_Creation/                  # Early dataset creation scripts
+├── version_01/                        # Legacy version
+├── 1/  2/                             # Raw signer dataset outputs
+├── README.md
+├── requirements.txt
+└── .gitignore
+```
+
+---
+
+## Installation
 
 ```bash
-# Process video with default settings
-python quick_start.py input_video.mp4 output_folder
+# 1. Clone repository
+git clone https://github.com/MLSP-Research-Group-UOJ/Voice-of-Hands.git
+cd Voice-of-Hands
 
-# Process from 8 minutes with larger crop
-python quick_start.py input_video.mp4 output_folder \
+# 2. Create and activate conda environment
+conda create -n voice_to_hands python=3.10 -y
+conda activate voice_to_hands
+
+# 3. Install dependencies
+pip install -r requirements.txt
+conda install -c conda-forge ffmpeg
+
+# 4. Verify MediaPipe and ffmpeg
+python -c "import mediapipe; print('MediaPipe OK')"
+ffmpeg -version
+```
+
+**Requirements**: Python 3.10+, ffmpeg, CUDA GPU (optional, speeds up Whisper)
+
+---
+
+## Pipeline: How to Run
+
+### Step 1 – Crop Interpreter Region
+
+Detects the sign language interpreter inset window and crops it from the broadcast video.
+
+```bash
+# Basic crop
+python src/utils/quick_start.py data/videos/input_video.mp4 outputs/signer_dataset/run1
+
+# High-quality 256×256 output, starting at 8 minutes
+python src/utils/quick_start.py data/videos/input_video.mp4 outputs/signer_dataset/run1 \
     --border-margin 0.05 \
     --crop-adjust 20 \
     --size 256 \
     --start-time 480
 ```
 
----
-
-## System Features
-
-✅ **Automatic Border Detection**: Precisely detects light-colored static borders around interpreters  
-✅ **Audio Preservation**: Maintains original audio in cropped videos using ffmpeg  
-✅ **Flexible Crop Control**: Adjustable border margin and pixel-level crop adjustment  
-✅ **Multiple Output Sizes**: Original, 128×128, or 256×256 resolution  
-✅ **Start Time Offset**: Skip intro/non-relevant content  
-✅ **Detection Visualization**: Saves sample frames with bounding boxes and parameters  
-✅ **Batch Processing**: Process multiple videos at once  
+**Output**: `outputs/signer_dataset/run1/clips/` — 5-second cropped clips with audio
 
 ---
 
-## Command Line Options
+### Step 2 – Detect Active Signing Clips
 
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `video_path` | string | Path to input video file | `videos/news.mp4` |
-| `output_dir` | string | Output folder for results | `output` |
-| `--size` | string | Output resolution: `original`, `128`, or `256` | `--size 256` |
-| `--border-margin` | float | Border exclusion (0.0-0.5, default: 0.15) | `--border-margin 0.05` |
-| `--crop-adjust` | int | Adjust crop size in pixels (±) | `--crop-adjust 20` |
-| `--start-time` | float | Start time in seconds | `--start-time 480` |
-| `--batch` | flag | Process all videos in folder | `--batch` |
-
----
-
-## Understanding the Parameters
-
-### Border Margin (Percentage-Based)
-Controls how much border to **exclude** during detection.
-
-- `0.05` (5%) → Larger crop, includes more area
-- `0.15` (15%) → Default, balanced crop
-- `0.20` (20%) → Smaller crop, tighter on interpreter
-
-**Effect**: Lower margin = more context captured
-
-### Crop Adjust (Pixel-Based)
-Fine-tunes the final crop size **after** detection.
-
-- **Positive** (+10, +20): Expands crop by N pixels on each side
-- **Negative** (-5, -10): Shrinks crop by N pixels on each side
-- **Zero** (0): Use exact detected size
-
-**Effect**: Independent of margin, direct pixel control
-
-### Combined Example
+Uses MediaPipe Holistic (pose + hands) to identify frames where the interpreter is actively signing vs at rest. Extracts only the active segments.
 
 ```bash
-# 5% margin (160×160) + 20px adjust = 200×200 → resize to 256×256
-python quick_start.py video.mp4 output \
-    --border-margin 0.05 \
-    --crop-adjust 20 \
-    --size 256 \
-    --start-time 480
+# Extract active signing clips from a cropped video
+python src/detection/sign_activity_detector.py \
+    data/videos/demo.mp4 \
+    outputs/active_clips/clips/ \
+    --threshold 0.02 \
+    --min-duration 1.0
+
+# Analyze only (no extraction, produces motion_analysis.json)
+python src/detection/sign_activity_detector.py \
+    data/videos/demo.mp4 \
+    outputs/active_clips/clips/ \
+    --analyze-only
 ```
 
-Result: 1.28× upscaling (excellent quality for sign language transcription)
+**Key parameters**:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--threshold` | 0.015 | Motion energy threshold (lower = more sensitive) |
+| `--min-duration` | 1.0 | Minimum active segment length (seconds) |
+| `--min-idle` | 0.5 | Minimum idle gap to split segments (seconds) |
+| `--no-horizontal-idle` | off | Disable horizontal rest position detection |
+
+---
+
+### Step 3 – Extract Audio & Transcribe
+
+Extracts Sinhala audio from each active clip and transcribes it using OpenAI Whisper with word-level timestamps.
+
+```bash
+# Extract audio aligned to video clips
+python src/dataset/run_audio_extraction.py
+
+# Run Whisper transcription (Sinhala, medium model)
+python src/dataset/run_transcription.py
+```
+
+**Output**: `data/multimodal_dataset/` — audio clips, transcription text files, and `alignment_metadata.json`
+
+---
+
+### Step 4 – Generate Visualization (demo7.mp4)
+
+`demo7.mp4` is a **full visualization recording** of the sign activity detection pipeline applied to `demo.mp4` (347 seconds). It was created with:
+
+```bash
+python src/detection/sign_activity_detector.py \
+    data/videos/demo.mp4 \
+    outputs/active_clips/clips_viz/ \
+    --save-visualization data/videos/demo7.mp4 \
+    --analyze-only
+```
+
+The output video overlays:
+- **MediaPipe skeleton** — pose landmarks + hand keypoints drawn on each frame
+- **Motion energy graph** — real-time graph at the bottom showing movement over time
+- **Active/Idle status label** — live annotation showing current signing state
+- **Threshold line** — visual indicator of the motion detection threshold
+
+> The visualization is re-encoded at lower bitrate, which is why `demo7.mp4` (28 MB) is much smaller than the original `demo.mp4` (98 MB) despite being the same duration.
+
+**Demo video progression**:
+
+| File | Duration | Description |
+|------|----------|-------------|
+| `demo.mp4` | 347s / 98MB | Original source video (full broadcast) |
+| `demo2.mp4` | 82s / 5.7MB | Cropped interpreter region test |
+| `demo3.mp4` | ~0s | Corrupt/empty test output |
+| `demo4.mp4` | 145s / 10MB | Cropped video with audio test |
+| `demo5.mp4` | 1.4s / 111KB | Single active clip extraction test |
+| `demo6.mp4` | 35s / 2.3MB | Multi-clip extraction test |
+| `demo7.mp4` | 347s / 28MB | **Full MediaPipe visualization of demo.mp4** |
+
+---
+
+## Command Reference
+
+### Crop and extract SLI clips (full pipeline)
+```bash
+python src/utils/quick_start.py <input_video> <output_dir> [options]
+```
+
+### Detect active signing segments
+```bash
+python src/detection/sign_activity_detector.py <input_video> <output_dir> [options]
+```
+
+### Extract audio aligned to clips
+```bash
+python src/dataset/run_audio_extraction.py
+```
+
+### Transcribe audio clips (Sinhala Whisper)
+```bash
+python src/dataset/run_transcription.py
+```
+
+### Fix audio-only clips
+```bash
+python src/dataset/fix_audio_only_clips.py \
+    outputs/active_clips/clips_with_audio/ \
+    outputs/active_clips/clips_fixed/ \
+    data/videos/source_video.mp4
+```
+
+### Crop video by time range
+```bash
+python src/utils/crop_video_by_time.py <input> <output> <start_sec> <end_sec>
+```
 
 ---
 
 ## Output Structure
 
 ```
-output_folder/
-├── clips/                          # 5-second video clips
-│   ├── video_clip_0000.mp4
-│   ├── video_clip_0001.mp4
-│   └── ...
-├── full_cropped/                   # Full cropped video with audio
-│   └── video_sli_cropped.mp4
-└── previews/                       # Detection visualization
-    ├── video_detection.jpg         # Grid of sample frames
-    ├── video_detection_frame01.jpg # Individual frame 1
-    ├── video_detection_frame02.jpg # Individual frame 2
-    └── ...
-```
+outputs/signer_dataset/run1/
+├── clips/            # 5-second video clips with audio
+├── full_cropped/     # Full duration cropped video
+├── previews/         # Detection visualization frames
+└── statistics.json   # Clip count, resolution, duration stats
 
-### Detection Preview Images
-
-Each preview frame shows:
-- ✅ Green bounding box around detected region
-- ✅ Detection method and confidence level
-- ✅ Crop size (width × height)
-- ✅ Border margin and crop adjust values
-- ✅ Frame number and position
-
----
-
-## Recommended Settings for Sign Language Transcription
-
-### Option 1: High Quality (Recommended)
-```bash
-python quick_start.py video.mp4 output \
-    --border-margin 0.05 \
-    --crop-adjust 20 \
-    --size 256 \
-    --start-time 480
-```
-- Original: 200×200 pixels
-- Final: 256×256 pixels
-- Upscaling: 1.28× (minimal quality loss)
-- Best for: Training data, high accuracy needed
-
-### Option 2: Balanced
-```bash
-python quick_start.py video.mp4 output \
-    --border-margin 0.10 \
-    --crop-adjust 10 \
-    --size 256 \
-    --start-time 480
-```
-- Original: 162×162 pixels
-- Final: 256×256 pixels
-- Upscaling: 1.58×
-- Best for: General use, good quality
-
-### Option 3: Compact
-```bash
-python quick_start.py video.mp4 output \
-    --border-margin 0.15 \
-    --size 128 \
-    --start-time 480
-```
-- Original: 124×124 pixels
-- Final: 128×128 pixels
-- Upscaling: 1.03× (minimal)
-- Best for: Fast processing, storage optimization
-
----
-
-## Audio Preservation
-
-The system automatically preserves audio from the original video using ffmpeg:
-
-1. Crops video frames (OpenCV)
-2. Extracts audio from original video
-3. Combines cropped video + audio (ffmpeg)
-4. Outputs final video with synchronized audio
-
-**Requirements**: ffmpeg must be installed
-```bash
-# Check if ffmpeg is available
-ffmpeg -version
-
-# Install on Ubuntu/Debian
-sudo apt install ffmpeg
-
-# Install on Conda
-conda install -c conda-forge ffmpeg
-```
-
-If ffmpeg is not available, videos will be saved without audio.
-
----
-
-## Batch Processing
-
-Process all videos in a folder:
-
-```bash
-python quick_start.py --batch input_videos/ output_dataset
-```
-
-This will:
-- Find all video files (mp4, avi, mov, mkv)
-- Process each video with the same settings
-- Organize outputs by video name
-
----
-
-## Examples
-
-### Example 1: Process parliament video from 8 minutes
-```bash
-python quick_start.py videos/Parliament_Live_01-12-2025.mp4 output_parliament \
-    --border-margin 0.05 \
-    --crop-adjust 20 \
-    --size 256 \
-    --start-time 480
-```
-
-### Example 2: Quick test with small output
-```bash
-python quick_start.py videos/test.mp4 output_test \
-    --size 128 \
-    --start-time 0
-```
-
-### Example 3: Maximum quality
-```bash
-python quick_start.py videos/video.mp4 output_hq \
-    --border-margin 0.05 \
-    --crop-adjust 30 \
-    --size 256 \
-    --start-time 0
+data/multimodal_dataset/
+├── alignment_metadata.json   # Per-clip audio-video-text alignment
+├── audio_clips/              # .wav audio per clip
+├── video_clips/              # .mp4 video per clip
+└── transcriptions/           # .txt Whisper output per clip
 ```
 
 ---
-
-## Troubleshooting
-
-### Issue: No audio in output
-**Solution**: Install ffmpeg
-```bash
-conda install -c conda-forge ffmpeg
-```
-
-### Issue: Crop too large/small
-**Solution**: Adjust parameters
-```bash
-# Larger crop
---border-margin 0.05 --crop-adjust 20
-
-# Smaller crop
---border-margin 0.20 --crop-adjust -5
-```
-
-### Issue: Detection quality low
-**Solution**: Check confidence in preview images. Try different detection methods if needed.
-
----
-
-## File Organization
-
-### Main Files
-- `quick_start.py` - Main command-line interface
-- `sli_detector.py` - Core detection and cropping engine
-- `dataset_utils.py` - Dataset analysis utilities (if exists)
-
-### Archived Files
-- `version_01/` - Previous versions and test scripts
-  - All test_*.py files
-  - Demo scripts
-  - Preview generation tools
-
-### Documentation
-- `resource_doc/` - Research notes and improvement suggestions
-  - `research_improvement_suggestions/` - Q&A and analysis documents
-
----
-
-## Technical Details
-
-### Detection Method
-- **Border Detection**: Analyzes HSV color space to find light-colored static borders
-- **Sampling**: Analyzes 50 frames across video for consistency
-- **Confidence**: Based on detection stability across frames
-- **Fallback**: Uses edge detection if border detection fails
-
-### Video Processing
-- **Input**: Any resolution, 25fps standard
-- **Codec**: MP4V for video, AAC for audio
-- **Interpolation**: INTER_CUBIC for high-quality resizing
-- **Frame Skip**: Configurable via start_time parameter
-
-### Performance
-- **Processing Speed**: ~100 frames/second on average CPU
-- **Memory Usage**: Minimal (frame-by-frame processing)
-- **Disk Space**: Depends on output size and clip duration
-
----
-
-## Support
-
-For issues or questions, check:
-1. `resource_doc/` for research notes and recommendations
-2. `version_01/` for alternative implementations
-3. Generated preview images in `output/previews/` for debugging
-
----
-
-**System Version**: 1.0  
-**Last Updated**: February 27, 2026  
-**Requires**: Python 3.10+, OpenCV 4.13+, NumPy 2.2+, ffmpeg (for audio)
