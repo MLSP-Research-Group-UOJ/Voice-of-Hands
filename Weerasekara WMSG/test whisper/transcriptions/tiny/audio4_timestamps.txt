@@ -1,0 +1,3 @@
+[0.00s - 2.00s]  nda kadea kadea teveladine
+[2.00s - 4.00s]  nda kadea teveladine
+[4.00s - 6.00s]  nda kadea teveladine
