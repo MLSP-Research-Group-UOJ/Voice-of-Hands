@@ -1,0 +1,17 @@
+File Name,Format,Sampling Rate (Hz),Bitrate,Channels,Duration (s),File Size (MB)
+audio1.m4a,.m4a,16000,256000,1,5.0,0.15
+audio1.wav,.wav,16000,256000,1,5.0,0.15
+audio2.m4a,.m4a,48000,0,0,5.29,0.06
+audio2.wav,.wav,48000,0,0,5.29,0.06
+audio3.m4a,.m4a,16000,256000,1,5.0,0.15
+audio3.wav,.wav,16000,256000,1,5.0,0.15
+audio4.m4a,.m4a,16000,256000,1,5.0,0.15
+audio4.wav,.wav,16000,256000,1,5.0,0.15
+audio5.m4a,.m4a,44100,48044,2,14.95,0.09
+audio5.wav,.wav,44100,48044,2,14.95,0.09
+audio6.m4a,.m4a,48000,0,0,2.94,0.04
+audio6.wav,.wav,48000,0,0,2.94,0.04
+audio7.m4a,.m4a,48000,0,0,3.95,0.05
+audio7.wav,.wav,48000,0,0,3.95,0.05
+audio8.m4a,.m4a,44100,0,2,482.79,2.81
+audio8.wav,.wav,44100,0,2,482.79,2.81
